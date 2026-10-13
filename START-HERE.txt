@@ -1,0 +1,18 @@
+RED ALERT - ANDROID BUILD (WINDOWS)
+
+This is source code. Running BUILD-ANDROID.cmd turns it into an installable APK on Expo's build servers.
+
+1. Get the files onto your PC, either:
+     git clone https://github.com/Molious/red-alert-android.git
+   or on GitHub: Code > Download ZIP, then right-click the ZIP and Extract All.
+2. Install Node.js LTS from https://nodejs.org/ if it isn't already installed.
+3. Open the red-alert-android folder and double-click BUILD-ANDROID.cmd.
+4. Sign in to Expo with the molious account when it shows the device link.
+5. When it asks to create the "red-alert-android" project, answer Y.
+6. If it asks to generate a new Android keystore, answer Y. Expo keeps it for future updates.
+7. Leave the window open. When the build finishes, open the build link on your Android phone and install the APK.
+   Android will ask to allow installs from that source - allow it, it's your own app.
+
+First launch: allow the microphone when you first give a voice command, and location when you first start a drive.
+
+If a step fails, keep the window open and send a photo of the error.
