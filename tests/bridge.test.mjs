@@ -17,6 +17,8 @@ test('bridge accepts only valid messages from the game origin', () => {
   for (const url of ['https://example.org', APP_ORIGIN + '.evil.org', 'http://vox-star-command.base44.app']) {
     assert.equal(parseBridgeMessage(JSON.stringify(packet('voice.listen')), url), null, url);
   }
+  assert.ok(parseBridgeMessage(JSON.stringify(packet('speech.say', { text: 'hi', pitch: 0.7, rate: 1.08 })), APP_ORIGIN));
+  assert.equal(parseBridgeMessage(JSON.stringify(packet('speech.say', { text: 'hi', pitch: 9 })), APP_ORIGIN), null);
   for (const p of [packet('file.read'), packet('voice.listen', { id: -1 }), packet('speech.say', { text: 'a'.repeat(2001) }), packet('voice.listen', { channel: 'laura-native-v1' })]) {
     assert.equal(parseBridgeMessage(JSON.stringify(p), APP_ORIGIN), null);
   }
@@ -56,7 +58,11 @@ test('injected bridge matches the API the Red Alert web app calls', () => {
   const seen = [];
   b.addEventListener('speak', () => seen.push('speak'));
   b.addEventListener('hush', () => seen.push('hush'));
-  b.speak('Contact on the glass.');
+  b.speak('Contact on the glass.', { pitch: 1.25, rate: 1.1 });
+  const said = messages[messages.length - 1];
+  assert.equal(said.type, 'speech.say');
+  assert.equal(said.pitch, 1.25);
+  assert.equal(said.rate, 1.1);
   b.receive({ channel: CHANNEL, doc, id: 99, type: 'speech.end' });
   assert.deepEqual(seen, ['speak', 'hush']);
 

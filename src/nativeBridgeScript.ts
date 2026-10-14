@@ -3,7 +3,7 @@
 //
 //   listenOnce(done(text|null, error|null)) -> id     one spoken command, then the mic closes
 //   cancelListen(id)
-//   speak(text), hush()                                SEXTANT's voice through Android text-to-speech
+//   speak(text, {pitch, rate}?), hush()                                SEXTANT's voice through Android text-to-speech
 //   watchPosition(onFix(fix), onError(message)) -> id  native GPS: { lat, lng, accuracy, speed, heading, ts }
 //   clearWatch(id)
 //   addEventListener('speak' | 'hush', fn), removeEventListener(...)
@@ -27,7 +27,13 @@ export const nativeBridgeScript = `
     announce: function () { post('bridge.ready', 0); window.dispatchEvent(new CustomEvent('red-alert-native-ready')); },
     listenOnce: function (done) { var id = ++serial; listens[id] = done; post('voice.listen', id); return id; },
     cancelListen: function (id) { delete listens[id]; post('voice.cancel', id); },
-    speak: function (text) { emit('speak'); post('speech.say', ++serial, { text: String(text).slice(0, 2000) }); },
+    speak: function (text, opts) {
+      emit('speak');
+      var extra = { text: String(text).slice(0, 2000) };
+      if (opts && typeof opts.pitch === 'number') extra.pitch = opts.pitch;
+      if (opts && typeof opts.rate === 'number') extra.rate = opts.rate;
+      post('speech.say', ++serial, extra);
+    },
     hush: function () { post('speech.cancel', 0); emit('hush'); },
     watchPosition: function (onFix, onError) { var id = ++serial; watches[id] = { fix: onFix, error: onError }; post('geo.watch', id); return id; },
     clearWatch: function (id) { delete watches[id]; post('geo.clear', id); },

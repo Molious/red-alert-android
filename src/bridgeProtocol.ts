@@ -13,6 +13,8 @@ export type Message = {
   id: number;
   type: string;
   text?: string;
+  pitch?: number;
+  rate?: number;
 };
 
 const TYPES = new Set([
@@ -41,6 +43,9 @@ export function parseBridgeMessage(raw: string, url: string): Message | null {
       return null;
     }
     if (m.type === 'speech.say' && (typeof m.text !== 'string' || m.text.length > 2000)) return null;
+    // Each pilot speaks with their own pitch and rate; keep both in a sane range.
+    if (m.type === 'speech.say' && m.pitch !== undefined && !(typeof m.pitch === 'number' && m.pitch >= 0.5 && m.pitch <= 2)) return null;
+    if (m.type === 'speech.say' && m.rate !== undefined && !(typeof m.rate === 'number' && m.rate >= 0.5 && m.rate <= 2)) return null;
     return m as Message;
   } catch {
     return null;

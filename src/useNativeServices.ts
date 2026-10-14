@@ -196,8 +196,8 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     if (!active.current) return;
     Speech.speak(r.text!, {
       language: 'en-AU',
-      rate: 0.98,
-      pitch: 0.85,
+      rate: r.rate ?? 0.98,
+      pitch: r.pitch ?? 0.85,
       onDone: () => send(r, 'speech.end'),
       onStopped: () => send(r, 'speech.end'),
       onError: () => send(r, 'speech.end'),
