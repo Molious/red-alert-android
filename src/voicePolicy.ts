@@ -17,3 +17,4 @@ export function pickLanguage(locale: string | null | undefined): string {
   const tag = String(locale || '').replace('_', '-');
   return /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(tag) && tag !== 'en-AU' ? tag : 'en-US';
 }
+

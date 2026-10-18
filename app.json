@@ -1,19 +1,16 @@
 {
   "expo": {
-    "name": "Red Alert",
-    "slug": "red-alert-android",
-    "version": "1.1.0",
+    "name": "Mole Beyond Test",
+    "slug": "mole-beyond-hybrid-test",
+    "version": "1.0.12",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "backgroundColor": "#05070b",
     "android": {
-      "package": "com.molious.redalert",
-      "versionCode": 2,
+      "package": "com.molious.molebeyondtest",
+      "versionCode": 13,
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.HIGH_SAMPLING_RATE_SENSORS",
         "android.permission.WAKE_LOCK"
       ],
       "blockedPermissions": [
@@ -35,16 +32,13 @@
           "speechRecognitionPermission": "Allow Red Alert to recognise your spoken commands."
         }
       ],
-      [
-        "expo-location",
-        {
-          "locationWhenInUsePermission": "Red Alert uses your location while the app is open to turn your drive into the battle map.",
-          "isAndroidBackgroundLocationEnabled": false,
-          "isAndroidForegroundServiceEnabled": false
-        }
-      ],
       "./plugins/withTrustedWebView.cjs"
     ],
-    "owner": "molious"
+    "owner": "molious",
+    "extra": {
+      "eas": {
+        "projectId": "3b15ffd0-bc1e-4013-8f82-d20e8a361e90"
+      }
+    }
   }
 }

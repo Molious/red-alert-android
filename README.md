@@ -1,51 +1,20 @@
-# Red Alert — Android
+TEST 14 / Android 1.0.12 (versionCode 13)
+See ../START-HERE-TEST-14.txt for build steps, controls and limitations.
 
-The Android app for **Last Mile Legends — Red Alert**. It's an Expo (React Native) shell that loads the live game at https://vox-star-command.base44.app in a trusted web view and gives it native powers through `window.RedAlertNative`:
+# Mole Beyond — Live Cockpit Test 13
 
-| Game feature | What the shell provides |
-|---|---|
-| Voice commands ("weapons", "lock on", "fire", combat yes/no) | Android speech recognition (`expo-speech-recognition`) |
-| SEXTANT's voice | Android text-to-speech (`expo-speech`) |
-| Live drive tracking | Native GPS (`expo-location`, best-for-navigation, 1 s updates) |
-| Cockpit tilt | Gyroscope/orientation events reach the web page directly; Android needs no permission for them |
-| Driving display | The screen stays on while the app is open (`expo-keep-awake`) |
+Version 1.0.11 / Android versionCode 12. The cockpit is the main screen after character selection. Its windscreen contains real road tiles and a GPS route. Destination confirmation, launch, directions, crew events and saves share one live journey controller. The old simulator remains isolated in legacy tests and is absent from normal play.
 
-App id: `com.molious.redalert`. Expo owner: `molious`.
+Read ../START-HERE-TEST-13.txt. Keep this folder beside mole-beyond-hybrid-03, then run BUILD-ANDROID.cmd on Windows. It installs native/dev dependencies, rebuilds the offline game document, runs checks and submits an Expo preview APK after your login. The source ZIP is not an APK; no compiled/signed APK or phone test was produced in this workspace.
 
-## The microphone fix, built in
+Voice output is enabled by default. The navigator prompts for a real destination. Confirm a resolved address and map marker, then launch while parked. Launch requires three fresh, accurate fixes with a known low GPS speed. If speed is unavailable, launch remains disabled; there is no simulated-location fallback. The short animated-art launch returns to the cockpit automatically and closes if motion begins.
 
-The Laura's Linguistics APK had a mic that switched on and then straight off. This shell avoids that from the start:
+Spoken directions, route recalculation and arrival run from foreground GPS fixes. Directions interrupt crew dialogue. Scanning, salvage, contact, combat and repair scenes use validated route progress, with saved unique outcomes. Crew handles moving encounters; no real detour or penalty for ignoring a game prompt. The fictional ship's damage is unrelated to the real vehicle.
 
-- **Google's speech service is used when the phone has it** (`com.google.android.googlequicksearchbox`, then `com.google.android.as`), instead of the phone's default, which on Samsungs is often Samsung's/Bixby's recogniser that ends the session immediately.
-- **If en-AU is refused**, it retries once in the phone's own language.
-- **Continuous listening** through short pauses, handing back the first finished phrase, capped at 60 seconds.
-- **No speech service at all** gives a clear message telling you to enable the Google app.
-- The mic waits for SEXTANT to finish speaking (for example "Lock on?") before it opens, so the question isn't heard as the answer.
+Voice input is one command per visible listening request. Supported phrases include destination [address], option one, confirm destination, launch, repeat direction, recenter, scan, collect salvage, acknowledge contact, defend, evade, repair, let crew handle it, pause story, resume story, save, cancel journey, resume navigation, retry route, mute and unmute. Destination selection can also use the dashboard. Android recognition may use its installed online speech service; recordings are not saved by this app.
 
-## Permissions
+This prototype is foreground-only. Leaving the app stops location, microphone and speech; return and tap Resume navigation to reacquire GPS and route. Screen-off/background directions, traffic, hazards, speed limits, offline road tiles and generated custom AI voices are not implemented. Current prototype services are OpenStreetMap tiles, public OSRM routing and device geocoding; availability and actual maneuvers still require phone/provider testing. Navigation speech is device text-to-speech.
 
-Asked for at the moment they're needed: **microphone** (first voice command) and **location while the app is open** (first drive). Background location, storage and overlay permissions are blocked.
+Character, credit ledger, journey destination and event outcomes save locally. Existing saves migrate without inventing current GPS position. Route geometry is reacquired after reopening. Uninstalling or clearing app data may delete progress; update with the same package and signing key.
 
-## Build
-
-On Windows: follow `START-HERE.txt` and run `BUILD-ANDROID.cmd`.
-
-Manual:
-
-1. `npm install`
-2. `npm run typecheck && npm test`
-3. `npx eas-cli@24.12.1 login --device` (molious account)
-4. `npx eas-cli@24.12.1 init` — first time only, links/creates the Expo project
-5. `npx eas-cli@24.12.1 build --platform android --profile preview` — produces an installable APK
-
-`production` builds an Android App Bundle for the Play Store.
-
-## Security
-
-The web view only exposes the native bridge to the main frame of `https://vox-star-command.base44.app` (patched in `plugins/withTrustedWebView.cjs` against the pinned `react-native-webview` 13.16.1). Messages are checked by origin, channel, page document and type (`src/bridgeProtocol.ts`).
-
-## Known limits
-
-- GPS runs while the app is open (screen on). Switching to another app, such as a delivery app, pauses tracking.
-- Google sign-in can't run inside a web view (Google blocks it). The game runs as a guest pilot without signing in; email sign-in works.
-- The Red Alert web app already contains the matching client code (`src/lib/native/useNativeBridge.js` and the hooks that use it), so nothing on the Base44 side needs changing.
+Validation: 72 web tests, 18 native/packaged tests, TypeScript and embedded-document budget checks. Chromium layout checks at 412x800 and 915x412 use synthetic tiles and GPS. They are not evidence of real-device road guidance quality.

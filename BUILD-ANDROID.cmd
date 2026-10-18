@@ -8,6 +8,12 @@ if errorlevel 1 goto neednode
 echo Installing the app dependencies...
 call npm install
 if errorlevel 1 goto failed
+call npm run bundle:hybrid
+if errorlevel 1 goto failed
+pushd "..\mole-beyond-hybrid-03"
+call npm test
+if errorlevel 1 (popd & goto failed)
+popd
 call npm run typecheck
 if errorlevel 1 goto failed
 call npm test
@@ -16,10 +22,10 @@ set "EAS_NO_VCS=1"
 echo Sign into the molious Expo account using the device link below.
 call npx --yes eas-cli@24.12.1 login --device
 if errorlevel 1 goto failed
-echo Linking the Expo project (answer Y if it asks to create "red-alert-android")...
+echo Linking the Expo project (answer Y if it asks to create "mole-beyond-hybrid-test")...
 call npx --yes eas-cli@24.12.1 init
 if errorlevel 1 goto failed
-echo Submitting the Red Alert Android APK build...
+echo Submitting the Mole Beyond Live Cockpit Test 14 APK build...
 call npx --yes eas-cli@24.12.1 build --platform android --profile preview
 if errorlevel 1 goto failed
 echo Follow the Expo build link above to download the APK after it succeeds.
@@ -33,3 +39,4 @@ exit /b 1
 echo The last step failed. Keep this window open and share the error text.
 pause
 exit /b 1
+

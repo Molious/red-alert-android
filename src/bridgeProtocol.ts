@@ -13,6 +13,8 @@ export type Message = {
   id: number;
   type: string;
   text?: string;
+  active?: boolean;
+  muted?: boolean;
   pitch?: number;
   rate?: number;
 };
@@ -25,6 +27,11 @@ const TYPES = new Set([
   'speech.cancel',
   'geo.watch',
   'geo.clear',
+  'geo.search',
+  'journey.active',
+  'session.prepare',
+  'session.cancel',
+  'audio.state',
 ]);
 
 export function parseBridgeMessage(raw: string, url: string): Message | null {
@@ -46,6 +53,9 @@ export function parseBridgeMessage(raw: string, url: string): Message | null {
     // Each pilot speaks with their own pitch and rate; keep both in a sane range.
     if (m.type === 'speech.say' && m.pitch !== undefined && !(typeof m.pitch === 'number' && m.pitch >= 0.5 && m.pitch <= 2)) return null;
     if (m.type === 'speech.say' && m.rate !== undefined && !(typeof m.rate === 'number' && m.rate >= 0.5 && m.rate <= 2)) return null;
+    if(m.type === 'geo.search' && (typeof m.text !== 'string' || m.text.trim().length < 3 || m.text.length > 200))return null;
+    if(m.type==='journey.active'&&typeof m.active!=='boolean')return null;
+    if(m.type==='audio.state'&&typeof m.muted!=='boolean')return null;
     return m as Message;
   } catch {
     return null;
@@ -60,3 +70,4 @@ export function shouldResetForNavigation(url: string): boolean {
     return true;
   }
 }
+

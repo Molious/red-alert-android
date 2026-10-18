@@ -1,18 +1,60 @@
-RED ALERT - ANDROID BUILD (WINDOWS)
+TEST 14 / Android 1.0.12 (versionCode 13)
+See ../START-HERE-TEST-14.txt for build steps, controls and limitations.
 
-This is source code. Running BUILD-ANDROID.cmd turns it into an installable APK on Expo's build servers.
+MOLE BEYOND — LIVE COCKPIT TEST 13
+Android version 1.0.11 / versionCode 12
 
-1. Get the files onto your PC, either:
-     git clone https://github.com/Molious/red-alert-android.git
-   or on GitHub: Code > Download ZIP, then right-click the ZIP and Extract All.
-2. Install Node.js LTS from https://nodejs.org/ if it isn't already installed.
-3. Open the red-alert-android folder and double-click BUILD-ANDROID.cmd.
-4. Sign in to Expo with the molious account when it shows the device link.
-5. When it asks to create the "red-alert-android" project, answer Y.
-6. If it asks to generate a new Android keystore, answer Y. Expo keeps it for future updates.
-7. Leave the window open. When the build finishes, open the build link on your Android phone and install the APK.
-   Android will ask to allow installs from that source - allow it, it's your own app.
+THIS IS SOURCE, NOT A COMPILED APK.
 
-First launch: allow the microphone when you first give a voice command, and location when you first start a drive.
+BUILD ON WINDOWS
+1. Extract the ZIP. Keep mole-beyond-hybrid-03 and red-alert-android-main together.
+2. Open red-alert-android-main and double-click BUILD-ANDROID.cmd.
+3. Complete the Expo device login if prompted. Follow the resulting build link
+   to download the APK after the cloud build succeeds.
+4. Install as an update using the same Expo project/signing key to retain local
+   progress. Do not uninstall the existing app merely to update it.
 
-If a step fails, keep the window open and send a photo of the error.
+FLOW
+Create / continue your named character, then board directly into the cockpit.
+Wraith prompts for your destination with speech enabled by default.
+Allow Location when asked. Type an address or press Voice command and say
+“destination [street address, suburb, country]”. Select an address result,
+check the marker, then Confirm destination. Voice can select “option one”.
+Launch becomes available after 3 accurate low-speed GPS fixes across at least
+3 seconds, with reported speed at or below 0.5 m/s. Unknown speed does not count
+as parked. Location works best with a clear GPS signal.
+Launch plays a 5-second animated-art prototype, then returns to the cockpit.
+Use Skip to cockpit to finish early. Motion or stale GPS removes the cinematic.
+Follow the real road route and spoken directions. “Repeat direction” repeats
+current guidance. Wrong-route detection requests recalculation.
+Crew scenes use actual route progress: scan, salvage, contact, combat, repairs.
+Crew handles moving encounters; details remain on the cockpit dashboard.
+Arrival saves the mission reward once and prompts for the next destination.
+
+CONTROLS
+Voice command is always at the top right. The dashboard scrolls on smaller
+screens. Destination, Launch, Repeat direction, Recenter, Voice command,
+Mute audio, Pause story, Save progress, Cancel journey and Character all stay
+in the cockpit. Start GPS / Resume navigation and Retry route appear when needed.
+Character changes require cancelling or finishing the current journey.
+
+VOICE PHRASES
+Destination [address]; option one/two/three/four/five; confirm destination;
+launch; repeat direction; recenter; scan; collect salvage; acknowledge contact;
+defend; evade; repair; let crew handle it; pause story; resume story; save;
+cancel journey; resume navigation; retry route; mute; unmute; main menu.
+One command per microphone request. Speech output starts on; microphone input
+is separate and visible. Directions interrupt story dialogue near maneuvers.
+
+LIMITS
+Keep the app open for guidance. Backgrounding/locking stops location, microphone
+and speech. Resume explicitly with fresh GPS after returning. This build does
+not provide background directions, traffic, speed-limit or live-hazard feeds,
+offline road maps, or generated AI character voices. Internet is needed for
+road tiles, addresses and routes; installed Android speech services may also
+need internet. The space tint is decoration around real road geometry.
+
+72 web tests and 18 native/packaged checks pass; TypeScript passes. Synthetic
+GPS replay, native callback tests and portrait/landscape Chromium checks were
+run. Real phone GPS, Android speech and actual road maneuvers still need testing.
+No claim of production road-navigation readiness is made from these tests.

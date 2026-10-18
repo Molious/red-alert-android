@@ -2,10 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import * as Speech from 'expo-speech';
 import * as Location from 'expo-location';
+import {activateKeepAwakeAsync,deactivateKeepAwake} from 'expo-keep-awake';
 import { ExpoSpeechRecognitionModule as Recognition, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import type WebView from 'react-native-webview';
 import type { WebViewMessageEvent } from 'react-native-webview';
 import { APP_ORIGIN, CHANNEL, parseBridgeMessage, type Message } from './bridgeProtocol';
+import {createRecognitionGate} from './recognitionGate';
+import {createSessionPreparation} from './sessionPreparation';
+import {createSpeechSession,waitForCaptureSpeech,createAudioSwitch} from './speechSession';
 import { pickLanguage, pickRecognitionService, MAX_LISTEN_MS } from './voicePolicy';
 
 // The native side of window.RedAlertNative: voice commands, SEXTANT's voice and GPS.
@@ -38,12 +42,17 @@ const NO_SERVICE =
 export function useNativeServices(web: React.RefObject<WebView | null>) {
   const [phase, setPhase] = useState<Phase>('off');
   const [error, setError] = useState('');
+  const [audioMuted,setAudioMuted]=useState(false);
   const document = useRef<string | null>(null);
   const capture = useRef<Capture | null>(null);
+  const recognitionGate=useRef(createRecognitionGate<Capture>());
   const epoch = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const active = useRef(true);
   const alive = useRef(true);
+  const journeyActive = useRef(false);
+  const setAwake=(value:boolean)=>{journeyActive.current=value;if(value)void activateKeepAwakeAsync('live-journey').then(()=>{if(!journeyActive.current)void deactivateKeepAwake('live-journey');}).catch(()=>{});else void deactivateKeepAwake('live-journey');};
+  const pendingWatches = useRef(new Set<number>());
   const watches = useRef(new Map<number, { remove: () => void }>());
 
   const send = (r: Pick<Message, 'doc' | 'id'>, type: string, extra: object = {}) => {
@@ -66,16 +75,18 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     send(c.request, 'voice.result', { text: text.length >= 2 ? text : '', error: text.length >= 2 ? null : c.error });
   };
   const startRecognition = (c: Capture) => {
+    if(!recognitionGate.current.claim(c))throw Error('Previous microphone session is still ending');
     const services = safe(() => Recognition.getSpeechRecognitionServices(), [] as string[]);
-    Recognition.start({
+    try{Recognition.start({
       lang: c.lang,
       interimResults: true,
       continuous: true,
       maxAlternatives: 1,
       androidRecognitionServicePackage: pickRecognitionService(services),
       recordingOptions: { persist: false },
-    });
+    });}catch(e){recognitionGate.current.release();throw e;}
     setPhase('listening');
+    send(c.request, 'voice.started');
     clearTimer();
     timer.current = setTimeout(() => stopVoice(), MAX_LISTEN_MS);
   };
@@ -110,6 +121,9 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     };
     capture.current = c;
     try {
+      const ended=await recognitionGate.current.wait();
+      if(capture.current!==c||c.epoch!==epoch.current||document.current!==r.doc||!active.current)return;
+      if(!ended){c.error='busy';deliver(c);capture.current=null;setPhase('off');return;}
       const p = await Recognition.requestPermissionsAsync();
       if (capture.current !== c || c.epoch !== epoch.current || document.current !== r.doc || !active.current) return;
       if (!p.granted) {
@@ -122,7 +136,9 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
       }
       // Let SEXTANT finish the question ("Lock on?") before the mic opens, so the prompt is heard and
       // not transcribed back as the answer.
-      await waitForSpeechToFinish();
+      const speechReady=await waitForCaptureSpeech(()=>capture.current===c&&c.epoch===epoch.current&&document.current===r.doc&&active.current,()=>waitForSpeechToFinish(20000));
+      if(speechReady==='stale')return;
+      if(speechReady==='busy'){c.error='busy';deliver(c);capture.current=null;setPhase('off');return;}
       if (capture.current !== c || c.epoch !== epoch.current || document.current !== r.doc || !active.current) return;
       if (!safe(() => Recognition.isRecognitionAvailable(), true)) {
         c.error = 'service-not-allowed';
@@ -144,8 +160,8 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   };
 
   useSpeechRecognitionEvent('result', (e) => {
-    const c = capture.current;
-    if (!c || c.delivered || c.epoch !== epoch.current) return;
+    const c = recognitionGate.current.current();
+    if (!c || c!==capture.current || c.delivered || c.epoch !== epoch.current) return;
     const transcript = e.results[0]?.transcript || '';
     if (transcript) c.text = transcript;
     // One command per request: the first finished phrase is the answer.
@@ -155,8 +171,8 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     }
   });
   useSpeechRecognitionEvent('error', (e) => {
-    const c = capture.current;
-    if (!c) return;
+    const c = recognitionGate.current.current();
+    if (!c||c!==capture.current||c.epoch!==epoch.current) return;
     // en-AU refused by this phone's recogniser: try again once in the phone's own language.
     if ((e.error === 'language-not-supported' || e.error === 'bad-grammar') && !c.retried && !c.text) {
       c.retried = true;
@@ -170,7 +186,8 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     deliver(c);
   });
   useSpeechRecognitionEvent('end', () => {
-    const c = capture.current;
+    const c = recognitionGate.current.release();
+    if(!c||c!==capture.current)return;
     if (c && c.retrying && !c.delivered && c.epoch === epoch.current && active.current) {
       c.retrying = false;
       try {
@@ -186,38 +203,38 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     if (alive.current) setPhase('off');
   });
 
-  // ---------- SEXTANT's voice ----------
-  const stopSpeech = () => {
-    void Speech.stop();
-  };
-  const speak = (r: Message) => {
-    cancelVoice();
-    stopSpeech();
-    if (!active.current) return;
-    Speech.speak(r.text!, {
-      language: 'en-AU',
-      rate: r.rate ?? 0.98,
-      pitch: r.pitch ?? 0.85,
-      onDone: () => send(r, 'speech.end'),
-      onStopped: () => send(r, 'speech.end'),
-      onError: () => send(r, 'speech.end'),
-    });
-  };
+  // Request-correlated speech: an old Android completion cannot finish a newer line.
+  const speechSession = useRef<ReturnType<typeof createSpeechSession> | null>(null);
+  if(!speechSession.current)speechSession.current=createSpeechSession({
+    speak:(text,callbacks,voice)=>Speech.speak(text,{language:'en-AU',rate:voice.rate??.98,pitch:voice.pitch??.85,...callbacks}),
+    stop:()=>Speech.stop(),send:(r,outcome)=>send(r,'speech.end',{outcome})
+  });
+  const stopSpeech = (id=0) => { speechSession.current?.cancel(id); };
+  const speak = (r:Message) => {cancelVoice();if(!active.current||audioSwitch.current?.isMuted()){send(r,'speech.end',{outcome:'cancelled'});return;}void speechSession.current?.say(r);};
+
+  const audioSwitch=useRef<ReturnType<typeof createAudioSwitch>|null>(null);
+  if(!audioSwitch.current)audioSwitch.current=createAudioSwitch({stop:()=>stopSpeech(),changed:setAudioMuted,notify:value=>web.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('hybrid-audio',{detail:{muted:${value}}})); true;`)});
+  const setAudioPaused=(value:boolean)=>audioSwitch.current?.set(value);
+  const preparation=useRef<ReturnType<typeof createSessionPreparation>|null>(null);
+  if(!preparation.current)preparation.current=createSessionPreparation({permission:()=>Location.requestForegroundPermissionsAsync(),microphone:()=>Recognition.requestPermissionsAsync(),voices:()=>Speech.getAvailableVoicesAsync(),isActive:()=>active.current,isCurrent:r=>alive.current&&document.current===r.doc,send:(r,result)=>send(r,'session.ready',result)});
 
   // ---------- GPS ----------
   const clearWatch = (id: number) => {
+    pendingWatches.current.delete(id);
     const sub = watches.current.get(id);
     if (sub) sub.remove();
     watches.current.delete(id);
   };
   const clearAllWatches = () => {
+    pendingWatches.current.clear();
     for (const sub of watches.current.values()) sub.remove();
     watches.current.clear();
   };
   const watch = async (r: Message) => {
+    pendingWatches.current.add(r.id);
     try {
-      const p = await Location.requestForegroundPermissionsAsync();
-      if (document.current !== r.doc) return;
+      const p = await Location.getForegroundPermissionsAsync();
+      if (document.current !== r.doc || !active.current || !pendingWatches.current.has(r.id)) return;
       if (!p.granted) {
         send(r, 'geo.error', { error: 'Location permission denied — allow it in Android Settings › Apps › Red Alert to track your route.' });
         return;
@@ -225,6 +242,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
       const sub = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 0 },
         (loc) => {
+          if(!active.current||!watches.current.has(r.id)&&!pendingWatches.current.has(r.id))return;
           const { latitude, longitude, accuracy, speed, heading } = loc.coords;
           send(r, 'geo.fix', {
             fix: {
@@ -238,7 +256,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
           });
         }
       );
-      if (document.current !== r.doc) {
+      if (document.current !== r.doc || !active.current || !pendingWatches.current.has(r.id)) {
         sub.remove();
         return;
       }
@@ -252,13 +270,15 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   // ---------- plumbing ----------
   const reset = () => {
     document.current = null;
+    preparation.current?.cancel();
     cancelVoice();
     stopSpeech();
     clearAllWatches();
+    setAwake(false);
   };
   const onMessage = (e: WebViewMessageEvent) => {
     const m = parseBridgeMessage(e.nativeEvent.data, e.nativeEvent.url);
-    if (!m) return;
+    console.info("BRIDGE", m?.type || "REJECTED", e.nativeEvent.url); console.info('BRIDGE', m?.type || 'REJECTED', e.nativeEvent.url); if (!m) return;
     if (m.type === 'bridge.ready') {
       if (document.current !== m.doc) {
         reset();
@@ -267,23 +287,46 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
       return;
     }
     if (document.current !== m.doc) return;
+    if(m.type==='session.prepare')void preparation.current?.start(m);
+    if(m.type==='session.cancel')preparation.current?.cancel(m.id);
+    if(m.type==='audio.state')setAudioPaused(m.muted===true);
+    if(m.type==='journey.active')setAwake(m.active===true&&active.current);
     if (m.type === 'voice.listen') void listen(m);
     if (m.type === 'voice.cancel' && capture.current?.request.id === m.id) cancelVoice();
     if (m.type === 'speech.say') speak(m);
-    if (m.type === 'speech.cancel') stopSpeech();
+    if (m.type === 'speech.cancel') stopSpeech(m.id);
+    if (m.type === 'geo.search') { void (async()=>{try {
+      const permission=await Location.getForegroundPermissionsAsync();
+      if(document.current!==m.doc||!active.current)return;
+      if(!permission.granted)throw Error('Location permission required');
+      const points=await Location.geocodeAsync(m.text!);const results=[];
+      for(const p of points.slice(0,5)){
+        if(document.current!==m.doc||!active.current)return;
+        let label=m.text!+' · '+p.latitude.toFixed(4)+', '+p.longitude.toFixed(4);
+        try{const [address]=await Location.reverseGeocodeAsync({latitude:p.latitude,longitude:p.longitude});
+          if(address)label=[address.streetNumber,address.street,address.city||address.district,address.region,address.postalCode,address.country].filter(Boolean).join(' ').slice(0,200)||label;
+        }catch{}
+        results.push({lat:p.latitude,lng:p.longitude,label});
+      }
+      send(m,'geo.results',{results});
+    }catch{send(m,'geo.results',{results:[],error:'Address lookup unavailable. Try a full street address, suburb and country.'});}})();}
     if (m.type === 'geo.watch') void watch(m);
     if (m.type === 'geo.clear') clearWatch(m.id);
   };
 
   useEffect(() => {
     alive.current = true;
-    // Leaving the app stops the mic and the voice; the GPS watch keeps running while the app is open.
+    // This prototype is foreground-only: location, microphone and speech stop together.
     const sub = AppState.addEventListener('change', (s) => {
+      console.info('APPSTATE',s);const preparing=preparation.current?.pending();
       active.current = s === 'active';
       if (!active.current) {
+        if(!preparing)web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-background')); true;");
         cancelVoice();
         stopSpeech();
-      }
+        clearAllWatches();
+        setAwake(false);
+      }else{if(preparing)preparation.current?.foreground();else web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-foreground')); true;");}
     });
     return () => {
       alive.current = false;
@@ -292,7 +335,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     };
   }, []);
 
-  return { phase, error, onMessage, reset, cancelVoice };
+  return { phase, error, audioMuted, toggleAudio:()=>audioSwitch.current?.toggle(), onMessage, reset, cancelVoice };
 }
 
 async function waitForSpeechToFinish(maxMs = 8000) {
@@ -304,10 +347,10 @@ async function waitForSpeechToFinish(maxMs = 8000) {
     } catch {
       speaking = false;
     }
-    if (!speaking) return;
+    if (!speaking) return true;
     await new Promise((r) => setTimeout(r, 150));
   }
-  void Speech.stop();
+  return false;
 }
 
 function safe<T>(fn: () => T, fallback: T): T {
@@ -317,3 +360,4 @@ function safe<T>(fn: () => T, fallback: T): T {
     return fallback;
   }
 }
+

@@ -40,7 +40,7 @@ test('injected bridge matches the API the Red Alert web app calls', () => {
   vm.runInNewContext(nativeBridgeScript, { window: win, location: win.location, CustomEvent: class { constructor(n) { this.type = n; } } });
   const b = win.RedAlertNative;
   assert.equal(b.version, 1);
-  for (const fn of ['listenOnce', 'cancelListen', 'speak', 'hush', 'watchPosition', 'clearWatch', 'addEventListener', 'removeEventListener', 'receive']) {
+  for (const fn of ['listenOnce', 'cancelListen', 'speak', 'speakRequest', 'cancelSpeech', 'hush', 'prepareSession', 'cancelPreparation', 'setAudioMuted', 'setJourneyActive', 'searchAddress', 'cancelSearch', 'watchPosition', 'clearWatch', 'addEventListener', 'removeEventListener', 'receive']) {
     assert.equal(typeof b[fn], 'function', fn);
   }
   const doc = messages[0].doc;
@@ -64,7 +64,33 @@ test('injected bridge matches the API the Red Alert web app calls', () => {
   assert.equal(said.pitch, 1.25);
   assert.equal(said.rate, 1.1);
   b.receive({ channel: CHANNEL, doc, id: 99, type: 'speech.end' });
+  assert.deepEqual(seen, ['speak'], 'a stale speech.end does not end the current line');
+  b.receive({ channel: CHANNEL, doc, id: said.id, type: 'speech.end' });
   assert.deepEqual(seen, ['speak', 'hush']);
+
+  // tracked speech carries the pilot's voice and reports its outcome
+  const outcomes = [];
+  const sid = b.speakRequest('Lock on?', (o) => outcomes.push(o), { pitch: 0.8, rate: 0.95 });
+  const asked = messages[messages.length - 1];
+  assert.deepEqual([asked.id, asked.pitch, asked.rate], [sid, 0.8, 0.95]);
+  b.speakRequest('No voice options.', () => {});
+  assert.equal('pitch' in messages[messages.length - 1], false);
+  b.receive({ channel: CHANNEL, doc, id: sid, type: 'speech.end', outcome: 'played' });
+  assert.deepEqual(outcomes, ['played']);
+
+  // session preparation, search, audio and journey state
+  const ready = [];
+  const pid = b.prepareSession((r) => ready.push(r));
+  b.receive({ channel: CHANNEL, doc, id: pid, type: 'session.ready', speechReady: true, locationGranted: true, microphoneGranted: false });
+  assert.deepEqual(JSON.parse(JSON.stringify(ready)), [{ speechReady: true, locationGranted: true, microphoneGranted: false }]);
+  const found = [];
+  const qid = b.searchAddress('12 Queen St', (r, e) => found.push([r, e]));
+  b.receive({ channel: CHANNEL, doc, id: qid, type: 'geo.results', results: [{ label: 'x' }] });
+  assert.deepEqual(JSON.parse(JSON.stringify(found)), [[[{ label: 'x' }], null]]);
+  b.setAudioMuted(true); b.setAudioMuted(true);
+  b.setJourneyActive(true);
+  const tail = messages.slice(-2).map((m) => [m.type, m.muted ?? m.active]);
+  assert.deepEqual(tail, [['audio.state', true], ['journey.active', true]]);
 
   // GPS fixes stream until cleared
   const fixes = [];
@@ -107,4 +133,18 @@ test('trusted web view patch locks messaging to the game origin', () => {
   assert.ok(out.includes('if (!isMainFrame) return;'));
   assert.ok(out.includes('messagingEnabled = false;'));
   assert.equal(secureWebViewSource(out), out);
+});
+
+test('newer session, journey, audio and search messages are accepted alongside pilot voices', async () => {
+  for (const p of [packet('session.prepare'), packet('session.cancel'), packet('geo.search', { text: '12 Queen St' }), packet('journey.active', { active: true }), packet('audio.state', { muted: false })]) {
+    assert.ok(parseBridgeMessage(JSON.stringify(p), APP_ORIGIN), p.type);
+  }
+  for (const p of [packet('geo.search', { text: 'ab' }), packet('journey.active', { active: 'yes' }), packet('audio.state'), packet('speech.say', { text: 'hi', rate: 0.1 })]) {
+    assert.equal(parseBridgeMessage(JSON.stringify(p), APP_ORIGIN), null, p.type);
+  }
+  const { createSpeechSession } = await import('../src/speechSession.ts');
+  let voice;
+  const session = createSpeechSession({ speak: (_t, _c, v) => { voice = v; }, stop: () => {}, send: () => {} });
+  await session.say({ id: 1, doc: 'document1', text: 'Lock on?', pitch: 1.3, rate: 0.9 });
+  assert.deepEqual(voice, { pitch: 1.3, rate: 0.9 });
 });

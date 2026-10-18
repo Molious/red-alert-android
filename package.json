@@ -1,5 +1,5 @@
 {
-  "name": "red-alert-android",
+  "name": "mole-beyond-hybrid-test",
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
@@ -9,6 +9,7 @@
     "expo-speech": "~57.0.3",
     "expo-speech-recognition": "57.1.1",
     "expo-status-bar": "~57.0.1",
+    "leaflet": "1.9.4",
     "react": "19.2.3",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
@@ -16,13 +17,16 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "esbuild": "^0.28.2",
+    "jsdom": "^26.1.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "bundle:hybrid": "node scripts/bundle-hybrid.mjs"
   },
   "private": true,
   "type": "module"
