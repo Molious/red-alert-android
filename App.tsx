@@ -1,71 +1,24 @@
-import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { useKeepAwake } from 'expo-keep-awake';
-import { WebView } from 'react-native-webview';
-import { useNativeServices } from './src/useNativeServices';
-import { nativeBridgeScript } from './src/nativeBridgeScript';
-import { APP_ORIGIN, shouldResetForNavigation } from './src/bridgeProtocol';
-
-// Red Alert's Android shell: the live game at vox-star-command.base44.app in a trusted web view, with
-// native voice commands, SEXTANT's voice and GPS provided through window.RedAlertNative. The screen stays
-// on while the app is open, because it is a driving game.
-export default function App() {
-  useKeepAwake();
-  const web = useRef<WebView | null>(null);
-  const native = useNativeServices(web);
-  const [loadError, setLoadError] = useState('');
-  return (
-    <SafeAreaProvider>
-      <SafeAreaView style={s.page} edges={['top', 'bottom']}>
-        <StatusBar style="light" />
-        {!!loadError && (
-          <View style={s.bar}>
-            <Text style={s.error}>{loadError}</Text>
-            <Pressable onPress={() => { setLoadError(''); web.current?.reload(); }} hitSlop={12}>
-              <Text style={s.label}>RETRY</Text>
-            </Pressable>
-          </View>
-        )}
-        {!!native.error && <Text style={s.error}>{native.error}</Text>}
-        <WebView
-          ref={web}
-          source={{ uri: APP_ORIGIN }}
-          style={s.web}
-          javaScriptEnabled
-          domStorageEnabled
-          geolocationEnabled
-          mediaPlaybackRequiresUserAction={false}
-          allowsInlineMediaPlayback
-          mixedContentMode="never"
-          setSupportMultipleWindows={false}
-          overScrollMode="never"
-          injectedJavaScriptBeforeContentLoaded={nativeBridgeScript}
-          injectedJavaScript={nativeBridgeScript}
-          onMessage={native.onMessage}
-          onLoadStart={() => setLoadError('')}
-          onNavigationStateChange={(nav) => { if (shouldResetForNavigation(nav.url)) native.reset(); }}
-          onError={(e) => setLoadError(e.nativeEvent.description || 'Could not reach Red Alert. Check your connection.')}
-          onHttpError={(e) => { if (e.nativeEvent.url?.startsWith(APP_ORIGIN)) setLoadError(`Connection returned ${e.nativeEvent.statusCode}.`); }}
-          onRenderProcessGone={() => { native.reset(); setLoadError('The game view stopped. Tap Retry to reopen it.'); }}
-          onShouldStartLoadWithRequest={(r) => r.url.startsWith('https://') || r.url === 'about:blank'}
-        />
-        {native.phase === 'listening' && (
-          <Pressable style={s.listening} onPress={() => native.cancelVoice()}>
-            <Text style={s.label}>LISTENING · TAP TO CANCEL</Text>
-          </Pressable>
-        )}
-      </SafeAreaView>
-    </SafeAreaProvider>
-  );
+import {useEffect,useRef,useState} from 'react';
+import {Pressable,Text,View,StyleSheet} from 'react-native';
+import {SafeAreaProvider,SafeAreaView} from 'react-native-safe-area-context';
+import {StatusBar} from 'expo-status-bar';
+import {WebView} from 'react-native-webview';
+import {useNativeServices} from './src/useNativeServices';
+import {nativeBridgeScript} from './src/nativeBridgeScript';
+import {APP_ORIGIN} from './src/bridgeProtocol';
+import offlineHtml from './src/hybridHtml';
+// Everything the simulator needs is bundled; the origin is a storage/bridge identity.
+const html=offlineHtml.replace('</head>',()=>'<script>'+nativeBridgeScript+'</script></head>');
+export default function App(){
+ const web=useRef<WebView|null>(null);const native=useNativeServices(web);const [error,setError]=useState('');const [boot,setBoot]=useState('Loading game…');const [reloadKey,setReloadKey]=useState(0);const bootTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ const clearBootTimer=()=>{if(bootTimer.current)clearTimeout(bootTimer.current);};
+ useEffect(()=>{setBoot('Loading game…');bootTimer.current=setTimeout(()=>{setError('Game startup timed out. Tap Retry game. Build 1.0.12 / Live Cockpit Test 14.');setBoot('');},20000);return clearBootTimer;},[reloadKey]);
+ const onGameMessage=(event:Parameters<typeof native.onMessage>[0])=>{try{const msg=JSON.parse(event.nativeEvent.data);if(msg.channel==='hybrid-boot-v1'){clearBootTimer();setBoot('');if(msg.type==='error')setError('Game error: '+msg.message);return;}}catch{}native.onMessage(event);};
+ return <SafeAreaProvider><SafeAreaView style={s.page} edges={['top','bottom']}><StatusBar style="light"/>
+ <View style={s.bar}><Text style={s.text}>MOLE BEYOND · LIVE COCKPIT · 1.0.12</Text><Pressable accessibilityRole="button" accessibilityLabel={native.audioMuted?"Resume audio":"Pause audio"} onPress={native.toggleAudio}><Text style={s.stop}>{native.audioMuted?'RESUME AUDIO':'PAUSE AUDIO'}</Text></Pressable></View>
+ {!!boot&&<Text style={s.text}>{boot}</Text>}{!!error&&<View><Text style={s.stop}>{error}</Text><Pressable accessibilityRole="button" onPress={()=>{native.reset();setError('');setReloadKey(k=>k+1);}}><Text style={s.stop}>Retry game</Text></Pressable></View>}{!!native.error&&<Text style={s.stop}>{native.error}</Text>}
+ <WebView applicationNameForUserAgent="MoleBeyond/1.0.12 (+https://github.com/Molious/red-alert-android)" key={reloadKey} ref={web} source={{html,baseUrl:APP_ORIGIN+'/'}} originWhitelist={[APP_ORIGIN]} style={s.page} javaScriptEnabled domStorageEnabled geolocationEnabled={false} mixedContentMode="never" setSupportMultipleWindows={false} onMessage={onGameMessage} injectedJavaScriptBeforeContentLoaded={nativeBridgeScript} injectedJavaScript={nativeBridgeScript} onShouldStartLoadWithRequest={r=>r.url===APP_ORIGIN+'/'||r.url==='about:blank'} onError={e=>{clearBootTimer();setBoot('');setError(e.nativeEvent.description);}} onRenderProcessGone={()=>{native.reset();setError('The test view stopped. Close and reopen the app while parked.');}}/>
+ </SafeAreaView></SafeAreaProvider>;
 }
+const s=StyleSheet.create({page:{flex:1,backgroundColor:'#05070b'},bar:{padding:12,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},text:{color:'#8ddde2',fontSize:11},stop:{color:'#ffb4bc',padding:8}});
 
-const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#05070b' },
-  web: { flex: 1, backgroundColor: '#05070b' },
-  bar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8, gap: 12 },
-  label: { color: '#7ee8f6', fontSize: 12, letterSpacing: 2 },
-  error: { color: '#ffb4bc', padding: 8, flexShrink: 1 },
-  listening: { minHeight: 44, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a0508' },
-});
