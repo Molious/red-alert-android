@@ -1,0 +1,16 @@
+MOLE BEYOND — NAVIGATION TEST 10 — VERSION 1.0.8
+
+Buildable source; not a precompiled APK.
+Keep both folders together. Run BUILD-ANDROID.cmd in red-alert-android-main, as before. Install the APK as an update to preserve local progress. Do not uninstall or clear app data.
+
+Navigation-first layout:
+- Full-height cockpit with compact mission and remaining-distance strip.
+- Windscreen map, crew and mission controls share one screen.
+- Menu opens secondary panels, opening story, ship settings, reports and log; Back to navigation closes it.
+- Voice command, stop audio and pause/resume shortcuts on flight deck.
+- Expand map hides dashboard for a larger chart.
+- Portrait and landscape layouts. Device voice, character names and local autosaves retained.
+
+IMPORTANT: The route is still fictional, with no GPS or real turn-by-turn directions. The layout is being prepared for navigation; this build is not a road navigation tool.
+
+Checks: 31 simulator tests, 3 offline/startup checks, packaged DOM flow including Menu opening/closing, named character, native speech request and saved mission. No phone layout rendering or Android APK compilation performed here. Confirm the fit on the phone.

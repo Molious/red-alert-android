@@ -1,0 +1,1 @@
+Read ../START-HERE-TEST-08.txt. App version 1.0.6.
