@@ -1,0 +1,3 @@
+export const SALVAGE=[{id:'pod-1',x:175,y:230,label:'Cargo pod',units:3},{id:'wreck-2',x:355,y:150,label:'Courier wreck',units:4},{id:'cache-3',x:530,y:112,label:'Engine cache',units:3}];
+export function scanSalvage(position,collected=[]){return SALVAGE.filter(s=>!collected.includes(s.id)&&Math.hypot(s.x-position.x,s.y-position.y)<=150).sort((a,b)=>Math.hypot(a.x-position.x,a.y-position.y)-Math.hypot(b.x-position.x,b.y-position.y)).slice(0,2);}
+export function recoverSalvage(id,collected,position){const target=SALVAGE.find(s=>s.id===id);if(!target)throw Error('Unknown salvage signal');if(collected.includes(id))return [...collected];if(!scanSalvage(position,collected).some(s=>s.id===id))throw Error('Salvage is outside shuttle range');return [...collected,id];}
