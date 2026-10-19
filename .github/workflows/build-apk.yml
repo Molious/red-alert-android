@@ -50,11 +50,33 @@ jobs:
           exec > >(tee /tmp/mole-sdk-setup.log) 2>&1
           mkdir -p "$HOME/.gradle"
           printf 'org.gradle.java.installations.paths=%s\n' "$JAVA_HOME_17_X64" >> "$HOME/.gradle/gradle.properties"
-          python - <<'PY'
-          import subprocess
-          subprocess.run(['sdkmanager','--licenses'],input='y\n'*100,text=True,check=True)
-          subprocess.run(['sdkmanager','platforms;android-36','build-tools;36.0.0','ndk;27.1.12297006','cmake;3.22.1'],check=True)
-          PY
+          python - <<'PYSDK'
+          import os,pathlib,urllib.request,xml.etree.ElementTree as ET,hashlib,zipfile,shutil,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'android-sdk'
+          user=pathlib.Path(os.environ['RUNNER_TEMP'])/'android-user'
+          user.mkdir(exist_ok=True)
+          metadata=ET.fromstring(urllib.request.urlopen('https://dl.google.com/android/repository/repository2-1.xml',timeout=60).read())
+          package=next(e for e in metadata if e.tag.endswith('remotePackage') and e.attrib.get('path')=='cmdline-tools;latest')
+          archive=next(e for e in package.findall('./archives/archive') if e.findtext('host-os')=='linux').find('complete')
+          filename=archive.findtext('url');expected=archive.findtext('checksum').strip().lower()
+          download=pathlib.Path(os.environ['RUNNER_TEMP'])/'android-command-tools.zip'
+          with urllib.request.urlopen('https://dl.google.com/android/repository/'+filename,timeout=120) as response,download.open('wb') as out:
+              shutil.copyfileobj(response,out)
+          digest=hashlib.new('sha1' if len(expected)==40 else 'sha256',download.read_bytes()).hexdigest()
+          assert digest==expected,'Official Android tools checksum mismatch'
+          target=root/'cmdline-tools';target.mkdir(parents=True)
+          with zipfile.ZipFile(download) as z:
+              assert all(not pathlib.PurePosixPath(n).is_absolute() and '..' not in pathlib.PurePosixPath(n).parts for n in z.namelist())
+              z.extractall(target)
+          (target/'cmdline-tools').rename(target/'latest')
+          for executable in (target/'latest/bin').iterdir():executable.chmod(0o755)
+          manager=target/'latest/bin/sdkmanager'
+          env={**os.environ,'ANDROID_HOME':str(root),'ANDROID_SDK_ROOT':str(root),'ANDROID_USER_HOME':str(user)}
+          subprocess.run([str(manager),'--sdk_root='+str(root),'--licenses'],input='y\n'*100,text=True,env=env,check=True)
+          subprocess.run([str(manager),'--sdk_root='+str(root),'platforms;android-36','build-tools;36.0.0','ndk;27.1.12297006','cmake;3.22.1'],input='y\n'*100,text=True,env=env,check=True)
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write(f'ANDROID_HOME={root}\nANDROID_SDK_ROOT={root}\nANDROID_USER_HOME={user}\n')
+          PYSDK
       - run: npm ci --no-audit --no-fund
       - name: Run regression and asset checks
         run: |
