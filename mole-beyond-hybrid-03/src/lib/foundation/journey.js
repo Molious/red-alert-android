@@ -1,6 +1,9 @@
 // Pure live journey transitions. The mission engine owns the atomic write.
+import {ENCOUNTER_TYPES,encounterOutcome} from './journey-events.js';
+import {addCargo,removeCargo,stationForDestination} from './economy.js';
+import {deliverContract} from './contracts.js';
 export const JOURNEY_PHASES=new Set(['awaiting_destination','resolving_destination','route_ready','launching','navigating','recalculating','signal_lost','arrived','cancelled']);
-const types=new Set(['scan','salvage','contact','combat','repair']);
+const types=ENCOUNTER_TYPES;
 export function migrateSave(saved){if(saved.version===2)return structuredClone(saved);return {...structuredClone(saved),version:2,legacyMission:structuredClone(saved.mission),mission:null,journey:null};}
 export function validateJourney(j){
  if(j===null||j===undefined)return;
@@ -27,8 +30,12 @@ export function reduceJourney(state,c){
   case 'live.phase':active();if(!['recalculating','signal_lost','navigating'].includes(c.phase))throw Error('Invalid phase');j.phase=c.phase;j.arrivalConfirmed=false;break;
   case 'live.progress':active();if(j.phase!=='navigating'||c.revision!==j.routeRevision||!Number.isFinite(c.verifiedMeters)||c.verifiedMeters<j.verifiedMeters||!Number.isFinite(c.remainingMeters)||c.remainingMeters<0)throw Error('Invalid route progress');j.verifiedMeters=c.verifiedMeters;j.remainingMeters=c.remainingMeters;j.arrivalConfirmed=c.arrivalConfirmed===true;break;
   case 'live.event':active();if(j.phase!=='navigating'||!c.event||!types.has(c.event.type)||c.event.id!==`${j.id}:${c.event.type}`)throw Error('Invalid encounter');if(!j.completedEventIds.includes(c.event.id)&&!j.activeEvent)j.activeEvent={...c.event};break;
-  case 'live.resolve':active();if(j.completedEventIds.includes(c.eventId))return s;if(!j.activeEvent||j.activeEvent.id!==c.eventId)throw Error('No matching encounter');{const event=j.activeEvent;const actions={scan:['scan','delegate'],salvage:['collect','delegate'],contact:['acknowledge','delegate'],combat:['defend','evade','delegate'],repair:['repair','delegate']}[event.type];if(!actions.includes(c.action))throw Error('Invalid encounter action');const reward=['salvage','combat'].includes(event.type)?10:0;if(reward)award(s,event.id,reward);j.shields=event.type==='combat'?Math.max(0,j.shields-10):event.type==='repair'?100:j.shields;j.completedEventIds.push(event.id);j.activeEvent=null;}break;
-  case 'live.arrive':if(j.arrivalAwarded)return s;if(j.phase!=='navigating'||!j.arrivalConfirmed)throw Error('Arrival not confirmed');award(s,j.id,100);j.arrivalAwarded=true;j.activeEvent=null;j.phase='arrived';break;
+  case 'live.resolve':active();if(j.completedEventIds.includes(c.eventId))return s;if(!j.activeEvent||j.activeEvent.id!==c.eventId)throw Error('No matching encounter');{const event=j.activeEvent;let o;try{o=encounterOutcome(event,c.action,s);}catch{throw Error('Invalid encounter action');}
+   if(o.reward>0)award(s,event.id,o.reward);else if(o.reward<0&&!s.ledger.some(x=>x.missionId===event.id)){s.ledger.push({missionId:event.id,amount:o.reward,kind:'trade'});s.credits+=o.reward;}
+   for(const [id,n] of Object.entries(o.cargo))if(n>0)addCargo(s,id,n);else if(n<0)removeCargo(s,id,-n);
+   j.shields=o.shields;if(event.type==='story'&&s.contracts?.active&&s.contracts.active.id===event.contractId)s.contracts.active.beats=[...s.contracts.active.beats,'mid'];
+   j.completedEventIds.push(event.id);j.activeEvent=null;}break;
+  case 'live.arrive':if(j.arrivalAwarded)return s;if(j.phase!=='navigating'||!j.arrivalConfirmed)throw Error('Arrival not confirmed');award(s,j.id,100);{const delivered=deliverContract(s);if(delivered)award(s,'contract:'+delivered.id,delivered.reward);j.deliveredContract=delivered?delivered.id:null;s.station=delivered?.station||stationForDestination(j.destination);}j.arrivalAwarded=true;j.activeEvent=null;j.phase='arrived';break;
   case 'live.cancel':if(j.phase==='arrived')throw Error('Journey already arrived');j.phase='cancelled';j.activeEvent=null;break;
   default:throw Error('Unknown live command');
  }

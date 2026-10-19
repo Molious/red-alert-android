@@ -68,3 +68,25 @@ main>.player-identity{order:0;margin:8px 4vw}main>.viewport{order:1;min-height:5
 /* Test 14: real roads seen through a visibly celestial windscreen. */
 .live-cockpit .live-navigation:before{display:none}.live-cockpit .road-map{background:#030514!important}.live-cockpit .road-map .leaflet-tile-pane{opacity:.78;filter:invert(1) hue-rotate(185deg) saturate(.35) contrast(1.18) brightness(.8)}.leaflet-spaceAtmosphere-pane{overflow:hidden;pointer-events:none!important;isolation:isolate}.space-nebula,.space-stars{position:absolute;inset:0;pointer-events:none}.space-nebula{background:radial-gradient(ellipse at 12% 24%,#7754c78a 0%,#472e7f66 19%,transparent 55%),radial-gradient(ellipse at 84% 78%,#0c99b076,transparent 60%),radial-gradient(ellipse at 66% 12%,#6d2e8277,transparent 55%),linear-gradient(135deg,#05031844,#080a2540 45%,#02152233);mix-blend-mode:screen}.space-stars{background:linear-gradient(160deg,transparent 25%,#b3eaff0a 47%,transparent 68%)}.space-star{position:absolute;width:var(--star-size);height:var(--star-size);border-radius:50%;background:#e7f7ff;box-shadow:0 0 5px #aee1ff;pointer-events:none}.space-star:nth-child(9n):after{content:'';position:absolute;left:-3px;top:1px;width:9px;height:1px;background:linear-gradient(90deg,transparent,#c6eaff,transparent)}.space-planet{position:absolute;right:7%;top:9%;width:clamp(48px,16%,88px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 30% 28%,#a6cfeb88,#5766b388 35%,#302c6788 62%,#080c2188 80%);box-shadow:-4px -3px 15px #7c9ce866,inset -15px -8px 16px #01041399;opacity:.82;pointer-events:none}.space-planet>span{position:absolute;inset:35% -45%;border:3px solid #9dc3e066;border-radius:50%;transform:rotate(-25deg);box-shadow:0 0 5px #bda9e455}.space-moon{position:absolute;left:12%;bottom:16%;width:23px;height:23px;border-radius:50%;background:radial-gradient(circle at 25% 25%,#b5cadca6,#40597a80 55%,#090f2799);box-shadow:-2px -1px 9px #c4ddff4d;opacity:.7;pointer-events:none}
 .live-cockpit .planning-destination .cockpit-dashboard{max-height:48%}.live-cockpit .road-results button{min-height:44px;white-space:normal;line-height:1.4}.live-cockpit .road-results{gap:5px;margin-top:6px}
+
+/* Station: contracts, cargo hold and market (1.0.20) */
+.station-panel{margin:6px 0;padding:10px;border:1px solid #3f8ea0;border-radius:8px;background:#06121ef2}
+.station-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.station-head h2{margin:0;font-size:16px;letter-spacing:.06em;color:#bff6ff}
+.station-head button{min-height:44px;margin:0;font-size:12px}
+.station-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:#9fdfe8;margin:6px 0}
+.station-meta b{color:#fff}
+.contract-card{border-left:3px solid #ffb35c;background:#140e06cc;padding:8px 10px;margin:8px 0;border-radius:0 6px 6px 0}
+.contract-card.active{border-left-color:#5ff0ff;background:#04141ccc}
+.contract-card small{display:block;font-size:9px;letter-spacing:.12em;color:#e8c184}
+.contract-card b{display:block;font-size:15px;margin:3px 0;color:#fff}
+.contract-card p{font-size:12px;line-height:1.4;margin:4px 0;color:#c9dde6}
+.contract-card .contract-terms{color:#9fdfe8}
+.contract-card button{min-height:44px;margin:6px 0 0;font-size:13px;border-color:#ffb35c}
+.market{width:100%;border-collapse:collapse;font-size:12px}
+.market th,.market td{padding:3px 4px;text-align:left;border-bottom:1px solid #1d3442}
+.market thead th{font-size:9px;letter-spacing:.1em;color:#9aaebc}
+.market tbody th{font-weight:500;color:#dfeef4}
+.market td:nth-child(2){text-align:center;color:#fff}
+.market button{min-height:40px;width:100%;margin:0;padding:4px 6px;font-size:11px}
+.station-note{font-size:11px;color:#92c5d2;margin:6px 0 0}

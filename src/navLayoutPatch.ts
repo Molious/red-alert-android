@@ -39,7 +39,7 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .road-status:not(.mole-alert),
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .voice-status,
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .navigation-planner,
-.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:is([data-action=destination],[data-action=launch],[data-action=home]){display:none}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:is([data-action=destination],[data-action=launch],[data-action=home],[data-action=station]){display:none}
 .live-cockpit .viewport[data-nav-mode=on] .flight-actions button:is([data-action=launch],[data-action=home]):disabled{display:none}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions{flex-wrap:nowrap}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button{flex:1 1 0;min-width:0;padding:6px 4px;font-size:11px;line-height:1.2}
@@ -290,7 +290,7 @@ export const navLayoutScript = `(function(){
  function wire(){
   var dash=document.querySelector('.cockpit-dashboard');if(!dash||dash.__moleNav)return;dash.__moleNav=1;
   var view=dash.closest('.viewport');var phase=dash.querySelector('[data-phase]');var actions=dash.querySelector('.flight-actions');
-  var KEYS={repeat:'REPEAT',recenter:'RECENTRE',mute:'MUTE',unmute:'SOUND\\nOFF',"pause-story":'STORY',"resume-story":'STORY\\nPAUSED',save:'SAVE',cancel:'ABORT',resume:'RESUME',retry:'RETRY\\nROUTE',destination:'DEST',launch:'LAUNCH',home:'CREW',voice:'MIC',delegate:'CREW\\nHANDLE'};
+  var KEYS={repeat:'REPEAT',recenter:'RECENTRE',mute:'MUTE',unmute:'SOUND\\nOFF',"pause-story":'STORY',"resume-story":'STORY\\nPAUSED',save:'SAVE',cancel:'ABORT',resume:'RESUME',retry:'RETRY\\nROUTE',destination:'DEST',station:'STATION',launch:'LAUNCH',home:'CREW',voice:'MIC',delegate:'CREW\\nHANDLE'};
   function keyLabels(){if(!actions)return;actions.querySelectorAll('button').forEach(function(b){var k=b.classList.contains('tray-toggle')?(dash.classList.contains('tray-open')?'CLOSE':'MENU'):(b.dataset.action==='resume'&&/start gps/i.test(b.textContent||'')?'START\\nGPS':KEYS[b.dataset.action]);if(k&&b.getAttribute('data-key')!==k)b.setAttribute('data-key',k);});}
   if(actions)new MutationObserver(keyLabels).observe(actions,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-action']});
   if(actions&&!actions.querySelector('.tray-toggle')){

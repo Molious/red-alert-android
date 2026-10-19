@@ -1,6 +1,8 @@
 import {migrateSave,reduceJourney,validateJourney} from './journey.js';
 import {createCombat,stepCombat} from './red-alert/combat.js';
 import {characterById,characterMods} from './red-alert/characters.js';
+import {validateCargo,applyTrade,holdFree} from './economy.js';
+import {validateContracts,acceptContract} from './contracts.js';
 // Standalone simulator state. One snapshot contains mission, reward ledger and story.
 // This is device-local persistence, not a substitute for server-side transactions.
 export const SAVE_KEY = 'mole-beyond:foundation:v1';
@@ -19,9 +21,10 @@ function validateSave(s) {
   if (s.player != null && !validPlayer(s.player)) throw Error('Invalid player profile');
   if (s.mission) { validateMission(s.mission); if (!statuses.has(s.mission.status)) throw Error('Invalid save status'); }
   if(s.version===2)validateJourney(s.journey);
+  validateCargo(s);validateContracts(s);
   const seen = new Set(); let total = 0;
   for (const row of s.ledger) {
-    if (typeof row.missionId !== 'string' || seen.has(row.missionId) || !Number.isSafeInteger(row.amount) || row.amount < 0) throw Error('Invalid save ledger');
+    if (typeof row.missionId !== 'string' || seen.has(row.missionId) || !Number.isSafeInteger(row.amount) || (row.amount < 0 && row.kind !== 'trade')) throw Error('Invalid save ledger');
     seen.add(row.missionId); total += row.amount;
   }
   if (total !== s.credits || (s.mission?.status === 'complete' && !seen.has(s.mission.id))) throw Error('Invalid save balance');
@@ -46,7 +49,8 @@ export function createMissionEngine({ storage, key = SAVE_KEY, live = false } = 
         const next=reduceJourney(state,command);next.revision++;validateSave(next);
         const encoded=JSON.stringify(next);storage.setItem(key,encoded);persisted=encoded;state=next;return copy(state);
       }
-      if(state.journey&&!['arrived','cancelled'].includes(state.journey.phase)&&command.type!=='player')throw Error('Live journey active');
+      const parkedPlanning=state.journey&&['awaiting_destination','resolving_destination','route_ready'].includes(state.journey.phase)&&['trade','contract.accept'].includes(command.type);
+      if(state.journey&&!['arrived','cancelled'].includes(state.journey.phase)&&command.type!=='player'&&!parkedPlanning)throw Error('Live journey active');
       if(command.type==='player'&&state.journey&&!['arrived','cancelled'].includes(state.journey.phase))throw Error('Cancel journey before changing player');
       const next = copy(state); const m = next.mission;
       switch (command.type) {
@@ -99,6 +103,8 @@ export function createMissionEngine({ storage, key = SAVE_KEY, live = false } = 
           if (m?.status !== 'arrived') throw Error('Invalid transition: arrive before completing');
           if (!next.ledger.some(row => row.missionId === m.id)) { next.ledger.push({missionId:m.id, amount:m.reward}); next.credits += m.reward; }
           m.status = 'complete'; break;
+        case 'trade': next.lastTrade=applyTrade(next,command); break;
+        case 'contract.accept': acceptContract(next,command.id,holdFree(next)); break;
         default: throw Error('Unknown mission command');
       }
       next.revision++;
