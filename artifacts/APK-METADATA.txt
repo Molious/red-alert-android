@@ -1,4 +1,4 @@
-package: name='com.molious.molebeyondtest' versionCode='22' versionName='1.0.21' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+package: name='com.molious.molebeyondtest' versionCode='23' versionName='1.0.22' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
 sdkVersion:'24'
 targetSdkVersion:'36'
 uses-permission: name='android.permission.ACCESS_COARSE_LOCATION'
