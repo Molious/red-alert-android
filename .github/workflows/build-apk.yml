@@ -51,12 +51,12 @@ jobs:
           mkdir -p "$HOME/.gradle"
           printf 'org.gradle.java.installations.paths=%s\n' "$JAVA_HOME_17_X64" >> "$HOME/.gradle/gradle.properties"
           python - <<'PYSDK'
-          import os,pathlib,urllib.request,xml.etree.ElementTree as ET,hashlib,zipfile,shutil,subprocess
+          import os,pathlib,urllib.request,xml.etree.ElementTree as ET,hashlib,zipfile,shutil,subprocess,time
           root=pathlib.Path(os.environ['RUNNER_TEMP'])/'android-sdk'
           user=pathlib.Path(os.environ['RUNNER_TEMP'])/'android-user'
           user.mkdir(exist_ok=True)
           metadata=ET.fromstring(urllib.request.urlopen('https://dl.google.com/android/repository/repository2-1.xml',timeout=60).read())
-          package=next(e for e in metadata if e.tag.endswith('remotePackage') and e.attrib.get('path')=='cmdline-tools;latest')
+          package=next(e for e in metadata if e.tag.endswith('remotePackage') and e.attrib.get('path')=='cmdline-tools;19.0')
           archive=next(e for e in package.findall('./archives/archive') if e.findtext('host-os')=='linux').find('complete')
           filename=archive.findtext('url');expected=archive.findtext('checksum').strip().lower()
           download=pathlib.Path(os.environ['RUNNER_TEMP'])/'android-command-tools.zip'
@@ -73,7 +73,12 @@ jobs:
           manager=target/'latest/bin/sdkmanager'
           env={**os.environ,'ANDROID_HOME':str(root),'ANDROID_SDK_ROOT':str(root),'ANDROID_USER_HOME':str(user)}
           subprocess.run([str(manager),'--sdk_root='+str(root),'--licenses'],input='y\n'*100,text=True,env=env,check=True)
-          subprocess.run([str(manager),'--sdk_root='+str(root),'platforms;android-36','build-tools;36.0.0','ndk;27.1.12297006','cmake;3.22.1'],input='y\n'*100,text=True,env=env,check=True)
+          packages=[str(manager),'--sdk_root='+str(root),'platforms;android-36','build-tools;36.0.0','ndk;27.1.12297006','cmake;3.22.1']
+          for attempt in range(3):
+              result=subprocess.run(packages,input='y\n'*100,text=True,env=env)
+              if result.returncode==0:break
+              if attempt==2:raise subprocess.CalledProcessError(result.returncode,packages)
+              print('Retrying interrupted Android package download',flush=True);time.sleep(5*(attempt+1))
           with open(os.environ['GITHUB_ENV'],'a') as f:
               f.write(f'ANDROID_HOME={root}\nANDROID_SDK_ROOT={root}\nANDROID_USER_HOME={user}\n')
           PYSDK
