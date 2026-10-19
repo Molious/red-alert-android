@@ -13,6 +13,7 @@ export function installStation({engine,controller,container,now=Date.now}){
  panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
   if(b.dataset.trade){const [op,commodity]=b.dataset.trade.split(':');void controller.command({type:'trade',op,commodity,units:1});return;}
   if(b.dataset.contract==='accept'){void controller.command({type:'accept-contract'});return;}
+  if(b.dataset.contract==='decline'){void controller.command({type:'decline-contract'});return;}
   if(b.dataset.close!==undefined){toggle(false);}
  });
  function toggle(value=!open){open=!!value;panel.hidden=!open;last='';render();}
@@ -24,7 +25,7 @@ export function installStation({engine,controller,container,now=Date.now}){
   const key=JSON.stringify([s.revision,parked,stationId]);if(key===last)return;last=key;
   const chapter=Math.min(s.contracts?.chapter||0,STORY_ARC.length);
   const contract=active?`<div class="contract-card active"><small>IN THE HOLD · ${active.id.startsWith('arc-')?'STORY '+(STORY_ARC.findIndex(c=>c.id===active.id)+1)+' OF '+STORY_ARC.length:'DISPATCH JOB'}</small><b>${esc(active.title)}</b><p>${esc(active.brief)}</p><p class="contract-terms">For ${esc(active.client)} at ${esc(STATIONS[active.station].name)} · ${active.reward} credits · delivered when you reach your destination</p></div>`
-   :offer?`<div class="contract-card"><small>CONTRACT OFFER · ${offer.id.startsWith('arc-')?'STORY '+(chapter+1)+' OF '+STORY_ARC.length:'DISPATCH BOARD'}</small><b>${esc(offer.title)}</b><p>${esc(offer.brief)}</p><p class="contract-terms">For ${esc(offer.client)} at ${esc(STATIONS[offer.station].name)} · ${offer.reward} credits · ${offer.units} hold space</p><button type="button" data-contract="accept" ${parked?'':'disabled'}>Accept contract</button></div>`:'';
+   :offer?`<div class="contract-card"><small>CONTRACT OFFER · ${offer.id.startsWith('arc-')?'STORY '+(chapter+1)+' OF '+STORY_ARC.length:'DISPATCH BOARD'}</small><b>${esc(offer.title)}</b><p>${esc(offer.brief)}</p><p class="contract-terms">For ${esc(offer.client)} at ${esc(STATIONS[offer.station].name)} · ${offer.reward} credits · ${offer.units} hold space</p><div class="planner-actions"><button type="button" data-contract="accept">Accept contract</button><button type="button" data-contract="decline">Decline</button></div></div>`:'';
   const rows=COMMODITY_IDS.map(id=>`<tr><th>${esc(COMMODITIES[id].name)}</th><td>${cargo[id]||0}</td><td><button type="button" data-trade="buy:${id}" ${parked?'':'disabled'} aria-label="Buy one ${esc(COMMODITIES[id].name)} for ${prices[id].buy} credits">Buy ${prices[id].buy}</button></td><td><button type="button" data-trade="sell:${id}" ${parked&&cargo[id]>0?'':'disabled'} aria-label="Sell one ${esc(COMMODITIES[id].name)} for ${prices[id].sell} credits">Sell ${prices[id].sell}</button></td></tr>`).join('');
   panel.innerHTML=`<div class="station-head"><h2>${esc(station.name)}</h2><button type="button" data-close>Close</button></div>
    <p class="station-meta"><span>Credits <b data-station-credits>${s.credits}</b></span><span>Hold <b data-station-hold>${holdUsed(s)}/${holdCapacity(s)}</b></span>${s.journey&&Number.isFinite(s.journey.shields)?`<span>Shields <b>${s.journey.shields}%</b></span>`:''}</p>

@@ -53,10 +53,17 @@ export function boardContract(n){
 
 export function contractState(state){return state.contracts||{chapter:0,jobs:0,completed:[],active:null};}
 
+// Turning an offer down: a story chapter waits until next time (a dispatch job is offered instead);
+// a dispatch job is replaced by the next one on the board.
+export function declineContract(state,offerId){
+ const offer=contractOffer(state);if(!offer)throw Error('Finish the current contract first');if(offer.id!==offerId)throw Error('That contract is no longer offered');
+ const c=contractState(state);state.contracts={...c,completed:[...c.completed],skipArc:offer.id.startsWith('arc-')?true:c.skipArc===true,jobs:offer.id.startsWith('job-')?c.jobs+1:c.jobs};return offer;
+}
+
 // The contract currently offered, or null while one is active.
 export function contractOffer(state){
  const c=contractState(state);if(c.active)return null;
- return c.chapter<STORY_ARC.length?STORY_ARC[c.chapter]:boardContract(c.jobs);
+ return c.chapter<STORY_ARC.length&&!c.skipArc?STORY_ARC[c.chapter]:boardContract(c.jobs);
 }
 export function contractById(id){return STORY_ARC.find(c=>c.id===id)||(/^job-\d+$/.test(id)?boardContract(Number(id.slice(4))):null);}
 
@@ -64,6 +71,7 @@ export function validateContracts(state){
  if(state.contracts===undefined)return;
  const c=state.contracts;
  if(!c||!Number.isSafeInteger(c.chapter)||c.chapter<0||c.chapter>STORY_ARC.length||!Number.isSafeInteger(c.jobs)||c.jobs<0||!Array.isArray(c.completed)||c.completed.some(x=>typeof x!=='string'))throw Error('Invalid contracts');
+ if(c.skipArc!==undefined&&typeof c.skipArc!=='boolean')throw Error('Invalid contracts');
  if(c.active!==null){if(!c.active||!contractById(c.active.id)||!Number.isSafeInteger(c.active.units)||c.active.units<1||!Array.isArray(c.active.beats))throw Error('Invalid active contract');}
 }
 
@@ -81,6 +89,6 @@ export function acceptContract(state,offerId,freeSpace){
 export function deliverContract(state){
  const c=contractState(state);if(!c.active)return null;
  const contract=contractById(c.active.id);
- state.contracts={chapter:c.active.id.startsWith('arc-')?c.chapter+1:c.chapter,jobs:c.active.id.startsWith('job-')?c.jobs+1:c.jobs,completed:[...c.completed,c.active.id],active:null};
+ state.contracts={skipArc:false,chapter:c.active.id.startsWith('arc-')?c.chapter+1:c.chapter,jobs:c.active.id.startsWith('job-')?c.jobs+1:c.jobs,completed:[...c.completed,c.active.id],active:null};
  return contract;
 }

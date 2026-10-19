@@ -1,6 +1,7 @@
 import {installLiveNavigation} from './live-navigation.js';
 import {installStation} from './station-view.js';
 import {installCrewPanel} from './crew-panel.js';
+import {SALVAGE_VIDEO} from './salvage-video.js';
 const buttons=[['Station','station'],['Crew','crew'],['Destination','destination'],['Launch','launch'],['Repeat direction','repeat'],['Recenter','recenter'],['Resume navigation','resume'],['Retry route','retry'],['Mic on / off','voice'],['Mute audio','mute'],['Pause story','pause-story'],['Save progress','save'],['Cancel journey','cancel'],['Character','home']];
 export function installCockpit({engine,controller,audio,crewVoices,aiCrew}){
  const viewport=document.querySelector('.viewport'),nav=document.createElement('section');nav.className='navigation-strip';nav.innerHTML='<div><small>LIVE ROAD NAVIGATION</small><strong data-next-turn>Choose your destination</strong><span data-turn-distance>Wraith is ready at navigation</span></div><div class="nav-voice"><span class="gps-badge">GPS waiting</span><button type="button" data-action="voice">Mic on / off</button></div>';viewport.prepend(nav);
@@ -9,6 +10,13 @@ export function installCockpit({engine,controller,audio,crewVoices,aiCrew}){
  const roadReady=installLiveNavigation({viewport}).then(m=>{if(disposed)m?.dispose();else{roadMap=m;if(latest)roadMap?.update(latest);}}).catch(e=>{status.textContent='Road map could not start. '+e.message;});
  nav.querySelector('[data-action="voice"]').onclick=()=>window.dispatchEvent(new CustomEvent('cockpit-listen'));
  const act=action=>controller.command(action);
+ // Salvage pickup: when Max brings a pod in, play the shuttle animatic in a small comms window (muted,
+ // away from the road map's centre) and close it when it ends.
+ const salvage=document.createElement('div');salvage.className='salvage-feed';salvage.hidden=true;salvage.setAttribute('aria-label','Max retrieving salvage');
+ salvage.innerHTML='<small>MAX · SHUTTLE FEED</small><video muted playsinline preload="auto"></video>';viewport.append(salvage);
+ const feed=salvage.querySelector('video');feed.src=SALVAGE_VIDEO;let salvageShown=new Set(),salvageTimer=null;
+ const endSalvage=()=>{clearTimeout(salvageTimer);try{feed.pause();}catch{}salvage.hidden=true;};feed.addEventListener('ended',()=>setTimeout(endSalvage,600));
+ function playSalvage(){salvage.hidden=false;try{feed.currentTime=0;const p=feed.play();if(p&&p.catch)p.catch(endSalvage);}catch{endSalvage();}clearTimeout(salvageTimer);salvageTimer=setTimeout(endSalvage,15000);}
  const station=installStation({engine,controller,container:get('.navigation-planner').parentNode});
  const crew=crewVoices?installCrewPanel({container:get('.navigation-planner').parentNode,audio,crewVoices,aiCrew}):null;
  dash.addEventListener('click',e=>{const b=e.target.closest('button[data-action]');if(b&&!b.disabled){const type=b.dataset.action;if(type==='voice'){window.dispatchEvent(new CustomEvent('cockpit-listen'));return;}if(type==='station'){station.toggle();return;}if(type==='crew'){crew?.toggle();return;}if(type==='home'){document.querySelector('.home-menu')?.click();return;}if(type==='resume'||type==='retry')window.dispatchEvent(new Event('cockpit-gps-retry'));if(type==='recenter'&&latest)roadMap?.recenter(latest);void act({type});}});
@@ -30,6 +38,7 @@ export function installCockpit({engine,controller,audio,crewVoices,aiCrew}){
   get('[data-action="station"]').setAttribute('aria-pressed',String(station.isOpen()));station.render();
   get('[data-limit]').textContent=Number.isFinite(s.speedLimit)?s.speedLimit:'—';get('[data-safety]').textContent=Number.isFinite(s.safety)?s.safety:'—';
   get('[data-action="crew"]').hidden=!!s.journey&&['navigating','launching','recalculating'].includes(s.journey.phase);
+  const done=(s.journey?.completedEventIds||[]).find(id=>id.endsWith(':salvage'));if(done&&!salvageShown.has(done)){salvageShown.add(done);if(s.journey.phase==='navigating')playSalvage();}
   roadMap?.update(s);
  }
  return {render,ready:roadReady,micState(enabled,listening){for(const b of document.querySelectorAll('button[data-action="voice"]')){b.textContent=enabled?(listening?'Mic listening':'Mic on'):'Mic off';b.setAttribute('aria-pressed',String(enabled));}get('.voice-status').textContent=enabled?(listening?'Microphone listening · commands only':'Hands-free mic on · pauses during speech'):'Microphone off';},caption(item){get('[data-speaker]').textContent=item.character||'CHET';get('[data-caption]').textContent=item.text;},listening(text){get('.voice-status').textContent=text;},recenter(){if(latest)roadMap?.recenter(latest);},dispose(){disposed=true;roadMap?.dispose();}};

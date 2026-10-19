@@ -32,7 +32,7 @@ test('crew voice check cycles voices, gender first, and remembers the choice',()
  assert.equal(v.current('VEX'),'f1');assert.equal(v.next('VEX'),'m1');assert.equal(v.next('VEX'),'m2');assert.equal(createCrewVoices({storage}).voiceFor('VEX'),'m2');
  assert.ok(CREW_ROSTER.every(c=>c.intro.includes(c.name)));
 });
-test('a first launch plays the prologue, crew chatter fills quiet stretches, and a contract rides along',async()=>{
+test('a first launch plays the prologue, crew chatter fills quiet stretches, and offers can be declined or accepted',async()=>{
  const N=40,pts=[];for(let i=0;i<=N;i++)pts.push([0,i*.002]);
  const route=parseRoadRoute({code:'Ok',routes:[{geometry:{type:'LineString',coordinates:pts},distance:8900,duration:900,legs:[{steps:[{maneuver:{type:'depart',location:pts[0]},distance:8900},{maneuver:{type:'arrive',location:pts[N]},distance:0}]}]}]});
  const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)},engine=createMissionEngine({storage,live:true});
@@ -40,10 +40,17 @@ test('a first launch plays the prologue, crew chatter fills quiet stretches, and
  let time=100000;const lines=[];const c=createJourneyController({engine,now:()=>time,services:{search:async()=>[{label:'Far',lat:.08,lng:0}],route:async()=>route,speedLimit:async()=>60},audio:{enqueue:i=>{lines.push(i);return Promise.resolve('played')},clear(){},setStoryPaused(){},holdStory(){}},onLaunch:cb=>{cb();return {cancel(){}}},id:()=>'trip-9'});
  const fix=(lat,speed=0,dt=1500)=>{time+=dt;c.fix({lat,lng:0,accuracy:5,speed,heading:0,ts:time});};
  c.enter();for(let i=0;i<4;i++)fix(0);await c.command({type:'search',text:'Far'});await c.command({type:'select',index:0});await c.command({type:'confirm'});await new Promise(r=>setTimeout(r,0));
- assert.ok(engine.snapshot().contracts?.active,'a contract is loaded automatically');
+ assert.ok(lines.some(l=>l.ask&&l.id.includes(':offer')),'a contract is offered by voice');assert.ok(!engine.snapshot().contracts?.active,'nothing is accepted without the captain');
+ await c.command({type:'decline'});assert.ok(lines.some(l=>/Another job came in/.test(l.text)),'declining brings another option');await c.command({type:'accept'});assert.ok(engine.snapshot().contracts.active.id.startsWith('job-'),'accepted the dispatch job');
  for(let i=0;i<4;i++)fix(0);await c.command({type:'launch'});
  assert.ok(lines.some(l=>l.id.startsWith('prologue:')),'prologue on first launch');assert.equal(engine.snapshot().story.prologue,true);
  let lng=0;for(let i=0;i<400;i++){fix(lng+=.0002,15,3000);}
 assert.ok(lines.some(l=>l.id.startsWith('chat:')),'crew chatter between encounters');
  assert.ok(engine.snapshot().journey.safety,'safety rating saved');
+});
+
+test('starting a new character replays the crew prologue',()=>{
+ const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)},engine=createMissionEngine({storage,live:true});
+ engine.dispatch({type:'live.story',prologue:true});assert.equal(engine.snapshot().story.prologueV,2);
+ engine.dispatch({type:'player',player:{name:'New',gender:'female',species:'reptilian',occupation:'support'}});assert.notEqual(engine.snapshot().story.prologueV,2);
 });

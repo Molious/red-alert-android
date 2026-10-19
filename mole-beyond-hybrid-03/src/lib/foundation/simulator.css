@@ -118,3 +118,8 @@ main>.player-identity{order:0;margin:8px 4vw}main>.viewport{order:1;min-height:5
 .ai-key h3{font-size:14px;margin:12px 0 4px;color:#e8c184}
 .ai-key input{width:100%;box-sizing:border-box;min-height:44px;font-size:14px;padding:8px}
 .dash-readouts{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+
+/* Max's salvage pickup feed (1.0.26) */
+.salvage-feed{position:absolute;z-index:9;right:10px;top:150px;width:min(52%,240px);background:#03101cee;border:1px solid #ffb35c;border-radius:8px;padding:4px;box-shadow:0 0 16px #ff9a3c55;pointer-events:none}
+.salvage-feed small{display:block;font:600 9px/1.4 ui-monospace,monospace;letter-spacing:.12em;color:#ffcf9a;padding:0 2px 3px}
+.salvage-feed video{display:block;width:100%;border-radius:5px;background:#000}

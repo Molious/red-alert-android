@@ -20,7 +20,7 @@ export function reduceJourney(state,c){
   if(j&&!['arrived','cancelled'].includes(j.phase))throw Error('Cancel current journey first');
   s.journey={id:c.id,phase:'resolving_destination',destination:{...c.destination},routeRevision:0,verifiedMeters:0,remainingMeters:0,completedEventIds:[],activeEvent:null,arrivalAwarded:false,arrivalConfirmed:false,shields:100};return s;
  }
- if(c.type==='live.story'){s.story={...s.story};if(c.prologue===true)s.story.prologue=true;if(typeof c.chatter==='string'&&/^[a-z0-9]{1,8}$/.test(c.chatter))s.story.chatter=[...(s.story.chatter||[]).filter(x=>x!==c.chatter),c.chatter].slice(-24);return s;}
+ if(c.type==='live.story'){s.story={...s.story};if(c.prologue===true){s.story.prologue=true;s.story.prologueV=2;}if(typeof c.chatter==='string'&&/^[a-z0-9]{1,8}$/.test(c.chatter))s.story.chatter=[...(s.story.chatter||[]).filter(x=>x!==c.chatter),c.chatter].slice(-24);return s;}
  if(!j||j.id!==c.id)throw Error('Wrong journey');
  const active=()=>{if(['arrived','cancelled'].includes(j.phase))throw Error('Journey is finished');};
  switch(c.type){

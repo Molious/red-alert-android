@@ -2,7 +2,7 @@ import {migrateSave,reduceJourney,validateJourney} from './journey.js';
 import {createCombat,stepCombat} from './red-alert/combat.js';
 import {characterById,characterMods} from './red-alert/characters.js';
 import {validateCargo,applyTrade,holdFree} from './economy.js';
-import {validateContracts,acceptContract} from './contracts.js';
+import {validateContracts,acceptContract,declineContract} from './contracts.js';
 // Standalone simulator state. One snapshot contains mission, reward ledger and story.
 // This is device-local persistence, not a substitute for server-side transactions.
 export const SAVE_KEY = 'mole-beyond:foundation:v1';
@@ -49,8 +49,8 @@ export function createMissionEngine({ storage, key = SAVE_KEY, live = false } = 
         const next=reduceJourney(state,command);next.revision++;validateSave(next);
         const encoded=JSON.stringify(next);storage.setItem(key,encoded);persisted=encoded;state=next;return copy(state);
       }
-      const parkedPlanning=state.journey&&['awaiting_destination','resolving_destination','route_ready'].includes(state.journey.phase)&&['trade','contract.accept'].includes(command.type);
-      if(state.journey&&!['arrived','cancelled'].includes(state.journey.phase)&&command.type!=='player'&&!parkedPlanning)throw Error('Live journey active');
+      const parkedPlanning=state.journey&&['awaiting_destination','resolving_destination','route_ready'].includes(state.journey.phase)&&['trade'].includes(command.type);
+      if(state.journey&&!['arrived','cancelled'].includes(state.journey.phase)&&command.type!=='player'&&!parkedPlanning&&!['contract.accept','contract.decline'].includes(command.type))throw Error('Live journey active');
       if(command.type==='player'&&state.journey&&!['arrived','cancelled'].includes(state.journey.phase))throw Error('Cancel journey before changing player');
       const next = copy(state); const m = next.mission;
       switch (command.type) {
@@ -58,6 +58,7 @@ export function createMissionEngine({ storage, key = SAVE_KEY, live = false } = 
           if(m?.status==='en_route')throw Error('Finish the current route before changing player.');
           if(!validPlayer(command.player))throw Error('Invalid player profile');
           if(command.player.name !== undefined && (typeof command.player.name !== 'string' || !command.player.name.trim() || command.player.name.trim().length>32))throw Error('Enter a character name of 1–32 characters');
+          next.story={...next.story,prologue:false,prologueV:0};
           next.player={...(command.player.name !== undefined ? {name:command.player.name.trim()} : {}),species:command.player.species,gender:command.player.gender,occupation:command.player.occupation};break;
         case 'ship': {
           if(m?.status === 'en_route')throw Error('Ship selection requires a parked briefing');
@@ -105,6 +106,7 @@ export function createMissionEngine({ storage, key = SAVE_KEY, live = false } = 
           m.status = 'complete'; break;
         case 'trade': next.lastTrade=applyTrade(next,command); break;
         case 'contract.accept': acceptContract(next,command.id,holdFree(next)); break;
+        case 'contract.decline': declineContract(next,command.id); break;
         default: throw Error('Unknown mission command');
       }
       next.revision++;

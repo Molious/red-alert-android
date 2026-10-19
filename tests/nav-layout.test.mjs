@@ -84,7 +84,8 @@ test('microphone is tap-to-talk: auto hands-free is switched off and one command
   d.querySelector('#create-player').click();d.querySelector('#board-ship').click();
   await tick(800);
   const mic=d.querySelector('.navigation-strip [data-action=voice]');
-  assert.equal(mic.getAttribute('aria-pressed'),'false','hands-free auto start is switched off');
+  for(let i=0;i<4&&mic.getAttribute('aria-pressed')==='true';i++){heard?.('decline contract',null);await tick(500);}
+  assert.equal(mic.getAttribute('aria-pressed'),'false','after answering the offers the mic is off');
   const before=listens;mic.click();await tick(500);
   assert.equal(mic.getAttribute('aria-pressed'),'true');assert.ok(listens>before,'tap opens the mic');
   heard?.('repeat direction',null);await tick(400);
