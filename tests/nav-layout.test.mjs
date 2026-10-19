@@ -111,3 +111,16 @@ test('character screen offers to end a leftover route so the captain can be chan
   assert.ok(d.getElementById('mole-end-route').hidden);
  }finally{dom.window.close();}
 });
+test('time parked before launch does not count: launching always opens the navigation cockpit',async()=>{
+ const {dom,d}=await cockpit();
+ try{
+  const view=d.querySelector('.live-cockpit .viewport'),phase=d.querySelector('[data-phase]'),speed=d.querySelector('.cockpit-dashboard [data-speed]');
+  speed.textContent='0';phase.textContent='route ready';
+  const realNow=dom.window.Date.now;let offset=0;dom.window.Date.now=()=>realNow()+offset;
+  offset=60000;await tick(1100);
+  phase.textContent='launching';await tick(1100);phase.textContent='navigating';await tick(1100);
+  assert.equal(view.dataset.navMode,'on','just launched: cockpit, not bridge');
+  offset+=31000;await tick(1100);assert.equal(view.dataset.navMode,'off','stopped 30 s mid-journey: bridge');
+  speed.textContent='20';await tick(1100);assert.equal(view.dataset.navMode,'on','moving again: cockpit');
+ }finally{dom.window.close();}
+});

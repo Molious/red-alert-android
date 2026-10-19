@@ -252,7 +252,9 @@ export const navLayoutScript = `(function(){
   // Stopped for 30 s mid-journey: show the bridge. Moving again (8 km/h+): back to the cockpit.
   var speedEl=dash.querySelector('[data-speed]'),stoppedSince=0,parkedView=false;
   function moving(){var v=parseInt(speedEl&&speedEl.textContent,10);return isFinite(v)?v:null;}
-  setInterval(function(){var v=moving(),was=parkedView;if(v!==null&&v>=8){stoppedSince=0;parkedView=false;}else if(v!==null&&v<=2){if(!stoppedSince)stoppedSince=Date.now();if(Date.now()-stoppedSince>=30000)parkedView=true;}if(was!==parkedView)sync();},1000);
+  // Only time spent stopped DURING a journey counts; the clock restarts at every launch.
+  var lastPhase='';
+  setInterval(function(){var v=moving(),was=parkedView,p=(phase&&phase.textContent||'').trim().toLowerCase(),inJourney=PHASES.indexOf(p)>=0&&p!=='launching';if(p!==lastPhase&&(p==='launching'||PHASES.indexOf(lastPhase)<0)){stoppedSince=0;parkedView=false;}lastPhase=p;if(!inJourney){stoppedSince=0;parkedView=false;}else if(v!==null&&v>=8){stoppedSince=0;parkedView=false;}else if(v===null||v<=2){if(!stoppedSince)stoppedSince=Date.now();if(Date.now()-stoppedSince>=30000)parkedView=true;}else stoppedSince=0;if(was!==parkedView)sync();},1000);
   function sync(){
    var p=(phase&&phase.textContent||'').trim().toLowerCase();var on=PHASES.indexOf(p)>=0&&!(parkedView&&p!=='launching');if(view)view.dataset.stopped=parkedView&&PHASES.indexOf(p)>=0?'true':'false';
    var want=on?'on':'off';if(view&&view.dataset.navMode!==want){var was=view.dataset.navMode;view.dataset.navMode=want;if(!was&&!on)return;if(!on){dash.classList.remove('tray-open');var b=dash.querySelector('.tray-toggle');if(b){b.textContent='More controls';b.setAttribute('aria-expanded','false');}}setTimeout(resize,50);}
