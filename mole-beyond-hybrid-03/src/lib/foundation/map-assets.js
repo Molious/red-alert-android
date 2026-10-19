@@ -1,0 +1,1 @@
+export const MAP_ASSETS={'spaceport':new URL('./map-assets/spaceport.webp',import.meta.url).href,'refuel':new URL('./map-assets/refuel.webp',import.meta.url).href,'salvage':new URL('./map-assets/salvage.webp',import.meta.url).href};

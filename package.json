@@ -24,7 +24,7 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs && node --test mole-beyond-hybrid-03/tests/*.test.js",
     "typecheck": "tsc --noEmit",
     "bundle:hybrid": "node scripts/bundle-hybrid.mjs"
   },

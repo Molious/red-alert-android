@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {createHash} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
 import {JSDOM,VirtualConsole} from 'jsdom';
 const source=readFileSync(new URL('../src/hybridHtml.ts',import.meta.url),'utf8');
 const html=JSON.parse(source.replace(/^export default /,'').trim().replace(/;$/,''));
-test('release preserves the exact latest bundled game, artwork and behavior',()=>{
- assert.equal(createHash('sha256').update(source).digest('hex'),'8865165db52385b8ebb4cc88315b06865aa917afdde1420f9d5d36380022b371');
+test('bundled game is exactly what the in-repo game source builds',()=>{
+ const r=spawnSync(process.execPath,['scripts/bundle-hybrid.mjs','--check'],{cwd:new URL('..',import.meta.url),encoding:'utf8'});
+ assert.equal(r.status,0,r.stderr||r.stdout);assert.match(r.stdout,/matches source/);
 });
 test('all 24 captain variants select distinct embedded WebP portraits',()=>{
  const dom=new JSDOM(html,{url:'https://vox-star-command.base44.app/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:new VirtualConsole(),beforeParse(w){w.structuredClone=structuredClone;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.SVGSVGElement.prototype.createSVGRect=()=>({});}});
