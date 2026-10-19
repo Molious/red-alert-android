@@ -1,5 +1,6 @@
 {
-  "state": "failed",
+  "state": "running",
   "version": "1.0.13",
-  "run_url": "https://github.com/Molious/red-alert-android/actions/runs/39179888200"
+  "source_commit": "94dd55023dfc6c0578599a9c767eac34687b35ea",
+  "run_url": "https://github.com/Molious/red-alert-android/actions/runs/39179956926"
 }
