@@ -73,3 +73,41 @@ test('compact tray keeps Resume story reachable and surfaces journey warnings',a
   status.textContent='Navigating to Ann Street';await tick();assert.ok(!status.classList.contains('mole-alert'));
  }finally{dom.window.close();}
 });
+test('microphone is tap-to-talk: auto hands-free is switched off and one command turns it off again',async()=>{
+ const vc=new VirtualConsole();let heard=null,listens=0;
+ const dom=new JSDOM(game.replace('</head>',()=>'<script>'+navLayoutScript+'</script></head>'),{url:'https://vox-star-command.base44.app/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){w.structuredClone=structuredClone;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.SVGSVGElement.prototype.createSVGRect=()=>({});
+  w.RedAlertNative={speakRequest(t,done){setTimeout(()=>done('played'),0);return 1},cancelSpeech(){},watchPosition(){return 7},clearWatch(){},searchAddress(t,cb){cb([],null);return 8},cancelSearch(){},
+   prepareSession(cb){setTimeout(()=>cb({speechReady:true,locationGranted:true,microphoneGranted:true}),0);return 3},cancelPreparation(){},
+   listenOnce(cb){listens++;heard=cb;return 9},cancelListen(){heard=null}};}});
+ const d=dom.window.document;
+ try{
+  d.querySelector('#create-player').click();d.querySelector('#board-ship').click();
+  await tick(800);
+  const mic=d.querySelector('.navigation-strip [data-action=voice]');
+  assert.equal(mic.getAttribute('aria-pressed'),'false','hands-free auto start is switched off');
+  const before=listens;mic.click();await tick(500);
+  assert.equal(mic.getAttribute('aria-pressed'),'true');assert.ok(listens>before,'tap opens the mic');
+  heard?.('repeat direction',null);await tick(400);
+  assert.equal(mic.getAttribute('aria-pressed'),'false','mic switches off after one command');
+  const after=listens;await tick(800);assert.equal(listens,after,'mic does not reopen by itself');
+ }finally{dom.window.close();}
+});
+test('character screen offers to end a leftover route so the captain can be changed',async()=>{
+ const vc=new VirtualConsole();let gps;
+ const route={code:'Ok',routes:[{geometry:{type:'LineString',coordinates:[[0,0],[.001,0]]},distance:111,duration:20,legs:[{steps:[{maneuver:{type:'depart',location:[0,0]},name:'A',distance:111},{maneuver:{type:'arrive',location:[.001,0]},distance:0}]}]}]};
+ const dom=new JSDOM(game.replace('</head>',()=>'<script>'+navLayoutScript+'</script></head>'),{url:'https://vox-star-command.base44.app/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){w.structuredClone=structuredClone;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.SVGSVGElement.prototype.createSVGRect=()=>({});w.fetch=async()=>({ok:true,json:async()=>route});
+  w.RedAlertNative={speakRequest(t,done){setTimeout(()=>done('played'),0);return 1},cancelSpeech(){},watchPosition(cb){gps=cb;return 7},clearWatch(){},searchAddress(t,cb){cb([{label:'Somewhere',lat:0,lng:.001}],null);return 8},cancelSearch(){},listenOnce(){return 9},cancelListen(){}};}});
+ const d=dom.window.document;
+ try{
+  d.querySelector('#create-player').click();d.querySelector('#player-name').value='Cory';d.querySelector('#board-ship').click();await tick(80);
+  gps({lat:0,lng:0,speed:0,accuracy:5,heading:null,ts:Date.now()});
+  const input=d.querySelector('.road-search input');input.value='Somewhere';d.querySelector('.road-search').dispatchEvent(new dom.window.Event('submit',{cancelable:true}));await tick(40);
+  d.querySelector('.road-results button').click();d.querySelector('[data-action="confirm"]').click();await tick(80);
+  d.querySelector('.home-menu').click();await tick(20);d.querySelector('#create-player').click();await tick(40);
+  assert.equal(d.getElementById('player-name').disabled,true,'route locks the character');
+  const end=d.getElementById('mole-end-route');assert.ok(end&&!end.hidden);
+  end.click();await tick(200);
+  assert.equal(d.getElementById('player-name').disabled,false,'character can be changed after ending the route');
+  assert.ok(d.getElementById('mole-end-route').hidden);
+ }finally{dom.window.close();}
+});

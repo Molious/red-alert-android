@@ -233,6 +233,38 @@ export const navLayoutScript = `(function(){
   if(con2&&cur&&cur.dataset.captain!==captainKey()){var ng=captainEl('seat');if(ng)con2.replaceChild(ng,cur);}
   var ls=document.querySelector('.launch-scene');if(ls&&!ls.querySelector('.mole-captain')){var lg=captainEl('launch');if(lg)ls.insertBefore(lg,ls.querySelector('.launch-copy'));}
  }
+
+ // --- tap-to-talk microphone (1.0.19) ---
+ // The game switches hands-free listening on at launch and reopens the mic after every phrase, so
+ // Android's mic keeps clicking on and off. Here the mic stays off until the driver taps Mic, takes
+ // one command, then switches off again.
+ var micTapAt=0,micOffTimer=null;
+ function micBtn(){return document.querySelector('.navigation-strip [data-action=voice]');}
+ function micIsOn(){var b=micBtn();return !!b&&b.getAttribute('aria-pressed')==='true';}
+ function micOff(){if(micIsOn()){try{window.dispatchEvent(new CustomEvent('cockpit-listen'));}catch(e){}}}
+ document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('button[data-action=voice]');if(t)micTapAt=Date.now();},true);
+ function hookMic(){
+  var R=window.RedAlertNative;if(!R||R.__moleMic||typeof R.listenOnce!=='function')return;
+  var o=R.listenOnce;R.listenOnce=function(done){return o.call(R,function(){var r=done.apply(this,arguments);clearTimeout(micOffTimer);micOffTimer=setTimeout(micOff,150);return r;});};R.__moleMic=1;
+ }
+ hookMic();var micTries=0,micTimer=setInterval(function(){hookMic();if(++micTries>40)clearInterval(micTimer);},250);
+ function micWatch(){
+  var b=micBtn();if(!b||b.__moleMicWatch)return;b.__moleMicWatch=1;
+  function check(){if(b.getAttribute('aria-pressed')==='true'&&Date.now()-micTapAt>1500){clearTimeout(micOffTimer);micOffTimer=setTimeout(micOff,50);}}
+  new MutationObserver(check).observe(b,{attributes:true,attributeFilter:['aria-pressed']});check();
+ }
+
+ // --- character screen: let the driver end a leftover route to change character (1.0.19) ---
+ function charUnlock(){
+  var lock=document.getElementById('player-lock');if(!lock)return;
+  var btn=document.getElementById('mole-end-route');
+  var locked=/route active/i.test(lock.textContent||'');
+  if(!locked){if(btn)btn.hidden=true;return;}
+  if(!btn){btn=document.createElement('button');btn.type='button';btn.id='mole-end-route';btn.textContent='End current route and change character';
+   btn.onclick=function(){var c=document.querySelector('.cockpit-dashboard [data-action=cancel]');if(c&&!c.disabled)c.click();setTimeout(function(){var cp=document.getElementById('create-player');if(cp)cp.click();},60);};
+   lock.parentNode.insertBefore(btn,lock.nextSibling);}
+  btn.hidden=false;
+ }
  function wire(){
   var dash=document.querySelector('.cockpit-dashboard');if(!dash||dash.__moleNav)return;dash.__moleNav=1;
   var view=dash.closest('.viewport');var phase=dash.querySelector('[data-phase]');var actions=dash.querySelector('.flight-actions');
@@ -251,6 +283,6 @@ export const navLayoutScript = `(function(){
   if(status){new MutationObserver(alertSync).observe(status,{childList:true,characterData:true,subtree:true});alertSync();}
   sync();
  }
- function start(){install();bridgeArt();wire();windscreen();hud();seats();new MutationObserver(function(){if(!document.getElementById('mole-nav-layout'))install();bridgeArt();wire();windscreen();hud();seats();}).observe(document.documentElement,{childList:true,subtree:true});}
+ function start(){install();bridgeArt();wire();windscreen();hud();seats();micWatch();charUnlock();new MutationObserver(function(){if(!document.getElementById('mole-nav-layout'))install();bridgeArt();wire();windscreen();hud();seats();micWatch();charUnlock();}).observe(document.documentElement,{childList:true,subtree:true});}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();`;
