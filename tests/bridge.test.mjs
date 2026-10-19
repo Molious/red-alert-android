@@ -82,7 +82,7 @@ test('injected bridge matches the API the Red Alert web app calls', () => {
   const ready = [];
   const pid = b.prepareSession((r) => ready.push(r));
   b.receive({ channel: CHANNEL, doc, id: pid, type: 'session.ready', speechReady: true, locationGranted: true, microphoneGranted: false });
-  assert.deepEqual(JSON.parse(JSON.stringify(ready)), [{ speechReady: true, locationGranted: true, microphoneGranted: false }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(ready)), [{ speechReady: true, locationGranted: true, microphoneGranted: false, voices: [], crew: {} }]);
   const found = [];
   const qid = b.searchAddress('12 Queen St', (r, e) => found.push([r, e]));
   b.receive({ channel: CHANNEL, doc, id: qid, type: 'geo.results', results: [{ label: 'x' }] });

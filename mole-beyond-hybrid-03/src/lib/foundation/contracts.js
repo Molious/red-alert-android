@@ -8,47 +8,47 @@ import {STATIONS,hash} from './economy.js';
 export const STORY_ARC=[
  {id:'arc-1',title:'Medical supplies',client:'Dr Ilse Varr',station:'morna',cargo:'medical',units:2,reward:120,
   brief:'Morna Station’s clinic is out of sterile packs. Dr Varr asked for us by name.',
-  offer:{character:'MAGS',text:'Captain, Mags. Dr Ilse Varr at Morna Station needs two crates of medical kits. One hundred and twenty credits, and she asked for us by name.'},
+  offer:{character:'MAX',text:'Captain, Max here. Dr Ilse Varr at Morna Station needs two crates of medical kits. One hundred and twenty credits, and she asked for us by name.'},
   depart:{character:'WRAITH',text:'Medical cargo is secure. Course plotted for Morna Station.'},
   mid:{character:'SILAS',text:'A courier beacon is repeating on an old frequency. Registry: the Kestrel. Reported lost three weeks ago.',done:'Logged. The beacon is weak, but it is real.'},
-  arrive:{character:'MAGS',text:'Dr Varr signed for the crates. She says the Kestrel was carrying her last shipment when it vanished. She wants to know what happened.'}},
+  arrive:{character:'MAX',text:'Dr Varr signed for the crates. She says the Kestrel was carrying her last shipment when it vanished. She wants to know what happened.'}},
  {id:'arc-2',title:'Sealed diplomatic pouch',client:'Envoy Teshar',station:'aurelian',cargo:null,units:1,reward:150,
   brief:'An envoy at Aurelian Relay needs a sealed pouch delivered with an unbroken chain of custody.',
-  offer:{character:'MAGS',text:'Envoy Teshar at Aurelian Relay wants a sealed pouch carried with a clean chain of custody. One fifty. The Relay also keeps every courier log, the Kestrel’s included.'},
+  offer:{character:'MAX',text:'Envoy Teshar at Aurelian Relay wants a sealed pouch carried with a clean chain of custody. One fifty. The Relay also keeps every courier log, the Kestrel’s included.'},
   depart:{character:'WRAITH',text:'Pouch sealed and logged. Heading for Aurelian Relay.'},
   mid:{character:'VEX',text:'Someone pinged our hull with a targeting scan and ran. Amateurs. Or they wanted us to notice.',done:'Weapons stay warm. Nobody touches the envoy’s pouch.'},
   arrive:{character:'SILAS',text:'The Relay’s logs show the Kestrel’s last jump ended near the Silent Repository. Someone tried to erase that entry.'}},
  {id:'arc-3',title:'Archive fragments',client:'Archivist Oen',station:'repository',cargo:'tech',units:2,reward:170,
   brief:'The Silent Repository wants damaged record cores returned for restoration.',
-  offer:{character:'MAGS',text:'The Silent Repository is paying one seventy to bring two damaged record cores home. It is exactly where the Kestrel disappeared. Coincidence costs extra, Captain.'},
+  offer:{character:'MAX',text:'The Silent Repository is paying one seventy to bring two damaged record cores home. It is exactly where the Kestrel disappeared. Coincidence costs extra, Captain.'},
   depart:{character:'SILAS',text:'These cores are older than this ship. I will keep them cold and quiet.'},
   mid:{character:'SILAS',text:'One of the cores is still writing. It holds a fragment of the Kestrel’s flight recorder.',done:'Fragment copied. The Kestrel’s pilot says they were boarded, not destroyed.'},
   arrive:{character:'CHET',text:'The Archivist confirms the Kestrel was taken under tow toward Beacon Nine. The beacon there has been dark ever since.'}},
  {id:'arc-4',title:'Emergency power cells',client:'Keeper Rhun',station:'beacon',cargo:'cells',units:3,reward:200,
   brief:'Beacon Nine is running on reserves. Restore its power and its sensors come back with it.',
-  offer:{character:'MAGS',text:'Beacon Nine is on reserve power. Three crates of cells, two hundred credits. Light it up and its sensors will show us where the Kestrel was taken.'},
+  offer:{character:'MAX',text:'Beacon Nine is on reserve power. Three crates of cells, two hundred credits. Light it up and its sensors will show us where the Kestrel was taken.'},
   depart:{character:'BASTION',text:'Power cells strapped down. If anyone shoots at us today, the shields are ready.'},
   mid:{character:'VEX',text:'Raider markings on the long-range scan. Same scavengers who took the Kestrel, I would bet my tail on it.',done:'They broke off. They know we are coming now.'},
   arrive:{character:'WRAITH',text:'The beacon is back online. Its last sweep tracked the Kestrel to Horizon Watch. The crew may still be alive.'}},
  {id:'arc-5',title:'Long-range sensor module',client:'Commander Saye',station:'horizon',cargo:'tech',units:2,reward:300,
   brief:'Horizon Watch needs a sensor module to find the missing Kestrel crew.',
-  offer:{character:'MAGS',text:'Horizon Watch needs a long-range sensor module to search for survivors. Three hundred credits. This is the one, Captain.'},
+  offer:{character:'MAX',text:'Horizon Watch needs a long-range sensor module to search for survivors. Three hundred credits. This is the one, Captain.'},
   depart:{character:'WRAITH',text:'Sensor module aboard. Plotting for Horizon Watch. Let us bring them home.'},
   mid:{character:'SILAS',text:'Faint life signs on the Kestrel’s frequency. Four of them. They are alive.',done:'Signal locked. Horizon Watch is sending a rescue shuttle on our mark.'},
   arrive:{character:'CHET',text:'The Kestrel’s crew are aboard the rescue shuttle. Dr Varr is waiting for them at Morna. Well flown, Captain. The dispatch board has new work for us.'}},
 ];
 
-const JOB_CHARACTERS=['MAGS','WRAITH','BASTION','MAX'];
+const JOB_CHARACTERS=['MAX','WRAITH','BASTION','MAX'];
 // After the arc: rolling jobs built from the dispatch board catalogue.
 export function boardContract(n){
  const m=MISSIONS[n%MISSIONS.length],stationIds=Object.keys(STATIONS).filter(id=>id!=='spaceport');
  const station=stationIds.find(id=>STATIONS[id].name===m.destination)||stationIds[hash(m.destination)%stationIds.length];
  const units=1+(hash('units:'+n)%3);
  return {id:'job-'+n,title:m.title,client:'Dispatch board',station,cargo:null,units,reward:m.reward,brief:m.brief,
-  offer:{character:'MAGS',text:`New job on the board: ${m.title.toLowerCase()} for ${m.destination}. ${m.reward} credits.`},
+  offer:{character:'MAX',text:`New job on the board: ${m.title.toLowerCase()} for ${m.destination}. ${m.reward} credits.`},
   depart:{character:JOB_CHARACTERS[n%JOB_CHARACTERS.length],text:`${m.title} secured. Heading for ${m.destination}.`},
   mid:null,
-  arrive:{character:'MAGS',text:`${m.title} delivered to ${m.destination}. ${m.reward} credits in the account.`}};
+  arrive:{character:'MAX',text:`${m.title} delivered to ${m.destination}. ${m.reward} credits in the account.`}};
 }
 
 export function contractState(state){return state.contracts||{chapter:0,jobs:0,completed:[],active:null};}

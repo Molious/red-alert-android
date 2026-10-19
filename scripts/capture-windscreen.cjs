@@ -28,16 +28,17 @@ const index=new geojsonvt({type:'FeatureCollection',features},{maxZoom:19,indexM
  await page.goto('https://windscreen.test/');await page.locator('#create-player').click();await page.locator('#player-name').fill('Captain Nova');await page.locator('#player-species').selectOption('light-being');await page.locator('#board-ship').click();await page.waitForTimeout(500);
  await page.evaluate(()=>{for(let i=0;i<5;i++){window.__clock+=1600;window.__fixtureFix?.({lat:-26.8,lng:153.1,speed:0,accuracy:5,heading:60,ts:Date.now()});}});
  await page.locator('.road-search input').fill('Nebula Avenue');await page.locator('.road-search').evaluate(e=>e.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));await page.locator('.road-results button').first().click();await page.locator('[data-action=confirm]').click();await page.locator('[data-action=launch]').click();
- await page.waitForTimeout(300);if(await page.locator('.launch-scene button').count())await page.locator('.launch-scene button').click();
+ await page.waitForTimeout(300);if(await page.locator('.launch-scene button').count())await page.locator('.launch-scene button').click({force:true});
  await page.evaluate(()=>{window.__clock+=1600;window.__fixtureFix?.({lat:-26.8,lng:153.1,speed:12,accuracy:5,heading:60,ts:Date.now()});});
  await page.waitForSelector('.live-navigation[data-vector-ready=true]');
  await page.waitForFunction(()=>window.__fixtureMap.areTilesLoaded()&&window.__fixtureMap.queryRenderedFeatures({layers:['street-names']}).length>0);
+ await page.waitForFunction(()=>!window.__fixtureMap.isMoving());await page.waitForTimeout(300); // camera eases into place
  const out=root+'/previews/windscreen-map';fs.mkdirSync(out,{recursive:true});
- assert.equal(await page.evaluate(()=>window.__fixtureMap.getBearing()),60);
+ assert.equal(Math.round(await page.evaluate(()=>window.__fixtureMap.getBearing())),60);
  assert.equal(await page.evaluate(()=>window.__fixtureMap.getPitch()),57);
  await page.screenshot({path:out+'/heading-up.png'});
- await page.locator('.mole-orient').click();await page.waitForTimeout(200);
- assert.equal(await page.evaluate(()=>window.__fixtureMap.getBearing()),0);
+ await page.locator('.mole-orient').click();await page.waitForTimeout(200);await page.waitForFunction(()=>!window.__fixtureMap.isMoving());
+ assert.equal(Math.round(await page.evaluate(()=>window.__fixtureMap.getBearing())),0);
  assert.equal(await page.evaluate(()=>localStorage.getItem('mole-beyond:map-orient')),'north');
  await page.screenshot({path:out+'/north-up.png'});
  // Check the taller S23 Ultra portrait layout and the tray's controls as well.
@@ -50,7 +51,7 @@ const index=new geojsonvt({type:'FeatureCollection',features},{maxZoom:19,indexM
  await page.locator('.tray-toggle').click();assert.equal(await page.locator('.tray-toggle').getAttribute('aria-expanded'),'true');
  await page.locator('.tray-toggle').click();
  // Gestures stop following; orientation still rotates in place, and Recenter resumes following.
- await page.evaluate(()=>window.__fixtureMap.fire('dragstart'));
+ await page.evaluate(()=>window.__fixtureMap.fire('dragstart',{originalEvent:new MouseEvent('mousedown')}));
  await page.locator('.mole-orient').click();assert.equal(await page.evaluate(()=>window.__fixtureMap.getBearing()),60);
  await page.locator('[data-action=recenter]').click();
  await page.locator('button[aria-label="Zoom in"]').click();await page.waitForFunction(()=>window.__fixtureMap.getZoom()>16.2);

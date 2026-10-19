@@ -1,4 +1,5 @@
 import {parseRoadRoute} from './navigation-core.js';
+import {parseMaxspeed} from './safe-driving.js';
 const coordinates=p=>p&&Number.isFinite(p.lat)&&Math.abs(p.lat)<=90&&Number.isFinite(p.lng)&&Math.abs(p.lng)<=180;
 export function createRoadServices({fetch:fetcher=globalThis.fetch,native=globalThis.RedAlertNative}={}){
  const getNative=()=>typeof native==='function'?native():native||globalThis.RedAlertNative;
@@ -11,6 +12,16 @@ export function createRoadServices({fetch:fetcher=globalThis.fetch,native=global
    const timer=setTimeout(()=>finish(Error('Address lookup timed out. Try again.')),15000);signal?.addEventListener('abort',abort,{once:true});
    try{id=bridge.searchAddress(text,(results,error)=>{if(error){finish(Error(error));return;}const found=(Array.isArray(results)?results:[]).filter(coordinates).slice(0,5).map(p=>({...p,label:typeof p.label==='string'&&p.label.trim()?p.label.slice(0,200):text+' · '+p.lat.toFixed(4)+', '+p.lng.toFixed(4)}));if(!found.length)finish(Error('No address found. Include suburb and country.'));else finish(null,found);});}catch(e){finish(e);}
   });},
+  // Posted speed limit near a position, from OpenStreetMap (Overpass). Null when unknown.
+  async speedLimit(p,signal){
+   if(!coordinates(p))return null;
+   const q=`[out:json][timeout:6];way(around:25,${p.lat.toFixed(6)},${p.lng.toFixed(6)})[highway][maxspeed];out tags 6;`;
+   const controller=new AbortController(),abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});const timer=setTimeout(abort,8000);
+   try{const response=await fetcher('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q),{signal:controller.signal});if(!response.ok)return null;const data=await response.json();
+    const roads=(data?.elements||[]).filter(e=>e?.tags&&!/^(service|footway|cycleway|path|track|steps)$/.test(e.tags.highway||''));
+    for(const r of roads){const v=parseMaxspeed(r.tags.maxspeed);if(v)return v;}return null;}
+   catch{return null;}finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
+  },
   async route(start,destination,signal){
    if(!coordinates(start)||!coordinates(destination))throw Error('Invalid route coordinates');
    const controller=new AbortController(),abort=()=>controller.abort();if(signal?.aborted)throw Error('Route cancelled');signal?.addEventListener('abort',abort,{once:true});const timer=setTimeout(abort,15000);

@@ -106,3 +106,15 @@ main>.player-identity{order:0;margin:8px 4vw}main>.viewport{order:1;min-height:5
 .live-navigation[data-cosmic-active=true][data-vector-ready=true]:not([data-vector-error=true]) .map-status{display:none}
 .mole-vector-map:before{content:'';position:absolute;right:11%;top:10%;width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#9edfff,#176791 35%,#10244b 62%,#010713 78%);box-shadow:-3px -2px 12px #6ba9ff55;opacity:.55;pointer-events:none}
 .mole-vector-map:after{content:'';position:absolute;right:calc(11% - 18px);top:calc(10% + 20px);width:94px;height:18px;border:2px solid #8fcaec44;border-radius:50%;transform:rotate(-22deg);pointer-events:none}
+
+/* Crew voice check and AI crew key (1.0.22) */
+.crew-panel{margin:6px 0;padding:10px;border:1px solid #7f6fb0;border-radius:8px;background:#0b0a1af2}
+.crew-note{font-size:12px;line-height:1.4;color:#c9d6e6;margin:6px 0}
+.crew-all{min-height:44px;margin:4px 0 8px;font-size:13px}
+.crew-voices{list-style:none;padding:0;margin:0}
+.crew-voices li{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid #26264a}
+.crew-voices b{display:block;font-size:14px;color:#fff}.crew-voices small{font-size:11px;color:#a9b8d6}
+.crew-voices button{min-height:44px;margin:0;font-size:12px;padding:4px 10px}
+.ai-key h3{font-size:14px;margin:12px 0 4px;color:#e8c184}
+.ai-key input{width:100%;box-sizing:border-box;min-height:44px;font-size:14px;padding:8px}
+.dash-readouts{grid-template-columns:repeat(4,minmax(0,1fr))!important}

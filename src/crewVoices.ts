@@ -15,9 +15,8 @@ export const CREW_PROFILES: Record<string, Profile> = {
   WRAITH: {gender: 'female', accents: ['en-au', 'en-gb', 'en-us'], pitch: 1.0, rate: 0.95}, // navigator: clear, unhurried
   VEX: {gender: 'male', accents: ['en-us', 'en-au', 'en-gb'], pitch: 0.75, rate: 1.06},
   SILAS: {gender: 'male', accents: ['en-gb', 'en-in', 'en-us'], pitch: 0.85, rate: 0.92},
-  MAGS: {gender: 'female', accents: ['en-gb', 'en-us', 'en-au'], pitch: 1.2, rate: 1.08},
   BASTION: {gender: 'male', accents: ['en-au', 'en-gb', 'en-us'], pitch: 0.65, rate: 0.88},
-  MAX: {gender: 'male', accents: ['en-in', 'en-us', 'en-au'], pitch: 1.05, rate: 1.04},
+  MAX: {gender: 'female', accents: ['en-in', 'en-us', 'en-au'], pitch: 1.1, rate: 1.06},
   CHET: {gender: 'female', accents: ['en-us', 'en-in', 'en-gb'], pitch: 1.1, rate: 1.0}, // ship AI
 };
 const DEFAULT: Profile = {gender: 'female', accents: ['en-au'], pitch: 0.9, rate: 0.98};
@@ -34,11 +33,14 @@ const lang = (v: DeviceVoice) => String(v.language || v.identifier || '').toLowe
 const accentOf = (v: DeviceVoice) => lang(v).slice(0, 5);
 export function voiceGender(v: DeviceVoice): Gender | null {
   const id = String(v.identifier || '').toLowerCase();
-  const code = /-x-([a-z]{3})(?:-|$)/.exec(id)?.[1];
+  const text = id + ' ' + String(v.name || '').toLowerCase();
+  // An explicit tag beats the voice-code table: Google also ships "en-us-x-sfg#male_1-local" style variants.
+  if (/(^|[^a-z])female/.test(text)) return 'female';
+  if (/(^|[^a-z])male/.test(text)) return 'male';
+  const samsung = /smt([fm])\d/.exec(text)?.[1];
+  if (samsung) return samsung === 'f' ? 'female' : 'male';
+  const code = /-x-([a-z]{3})(?:[-#_]|$)/.exec(id)?.[1];
   if (code && GOOGLE_GENDER[code]) return GOOGLE_GENDER[code];
-  const name = String(v.name || '').toLowerCase();
-  if (/\bfemale\b|#female/.test(id + ' ' + name)) return 'female';
-  if (/\bmale\b|#male/.test(id + ' ' + name)) return 'male';
   return null;
 }
 const offline = (v: DeviceVoice) => !/network/i.test(v.identifier || '');
@@ -63,7 +65,20 @@ export function assignCrewVoices(voices: readonly DeviceVoice[] | null | undefin
   return out;
 }
 
-export function crewVoiceFor(map: Record<string, CrewVoice> | null, character: unknown): CrewVoice {
-  const key = typeof character === 'string' ? character.toUpperCase() : '';
-  return (map && map[key]) || (map && map.WRAITH) || {language: 'en-AU', pitch: DEFAULT.pitch, rate: DEFAULT.rate};
+// The English voices offered to the game for the crew voice check (id, language, guessed gender).
+export type VoiceOption = {id: string; lang: string; gender: Gender | null};
+export function crewVoiceList(voices: readonly DeviceVoice[] | null | undefined): VoiceOption[] {
+  return (voices || []).filter(v => v && v.identifier && /^en(-|$)/.test(lang(v)) && v.identifier.length <= 100)
+    .sort((a, b) => Number(offline(b)) - Number(offline(a)) || a.identifier.localeCompare(b.identifier))
+    .slice(0, 40).map(v => ({id: v.identifier, lang: v.language || lang(v), gender: voiceGender(v)}));
+}
+
+// `chosen` is the driver's pick from the crew voice check; it wins when the phone still has that voice.
+export function crewVoiceFor(map: Record<string, CrewVoice> | null, character: unknown, chosen?: unknown, options?: readonly VoiceOption[]): CrewVoice {
+  const raw = typeof character === 'string' ? character.toUpperCase() : '';
+  const key = raw === 'MAGS' ? 'MAX' : raw; // Mags was Max's old name in early builds
+  const base = (map && map[key]) || (map && map.WRAITH) || {language: 'en-AU', pitch: DEFAULT.pitch, rate: DEFAULT.rate};
+  const p = CREW_PROFILES[key];
+  const pick = typeof chosen === 'string' && options ? options.find(o => o.id === chosen) : undefined;
+  return pick ? {voice: pick.id, language: pick.lang || base.language, pitch: p?.pitch ?? base.pitch, rate: p?.rate ?? base.rate} : base;
 }

@@ -25,7 +25,7 @@ export function encounterDeck(journey,state={}){
  const active=contractState(state).active,contract=active&&contractById(active.id);
  if(contract?.mid)deck.push({type:'story',at:.42,character:contract.mid.character,contractId:contract.id,text:contract.mid.text,done:contract.mid.done});
  if((seed>>>7)%3===2){
-  deck.push({type:'trader',at:.56,character:'MAGS',...traderOffer(journey,state,seed)});
+  deck.push({type:'trader',at:.56,character:'MAX',...traderOffer(journey,state,seed)});
  }else{
   const tier=tierFor(seed>>>9);
   deck.push({type:'contact',at:.52,character:'VEX',tier,text:`Unidentified contact behind us. Looks like a ${tier}. I am taking the weapons station. Stay on the navigation route.`});
@@ -71,10 +71,10 @@ export function encounterOutcome(event,action,state={}){
   case 'repair':out.shields=100;say('BASTION','Shield repairs complete. The ship is ready for the next leg.');break;
   case 'trader':{const t=event.trade;const take=action==='accept'||action==='delegate'&&t?.op==='sell'; // the crew never spend credits unasked
    if(take&&t){const have=cargoOf(state)[t.commodity]||0,total=t.price*t.units;
-    if(t.op==='sell'&&have>=t.units){out.reward=total;out.cargo[t.commodity]=-t.units;say('MAGS',`Deal done. ${total} credits for ${t.units} ${COMMODITIES[t.commodity].name.toLowerCase()}.`);break;}
-    if(t.op==='buy'&&(state.credits||0)>=total&&holdFree(state)>=t.units){out.reward=-total;out.cargo[t.commodity]=t.units;say('MAGS',`Deal done. ${t.units} ${COMMODITIES[t.commodity].name.toLowerCase()} in the hold for ${total} credits. We will sell them at the next station.`);break;}
-    if(action==='accept'){say('MAGS','We cannot cover that deal right now. I have told them no.');break;}}
-   say('MAGS','I passed on the deal. The freighter is moving on.');break;}
+    if(t.op==='sell'&&have>=t.units){out.reward=total;out.cargo[t.commodity]=-t.units;say('MAX',`Deal done. ${total} credits for ${t.units} ${COMMODITIES[t.commodity].name.toLowerCase()}.`);break;}
+    if(t.op==='buy'&&(state.credits||0)>=total&&holdFree(state)>=t.units){out.reward=-total;out.cargo[t.commodity]=t.units;say('MAX',`Deal done. ${t.units} ${COMMODITIES[t.commodity].name.toLowerCase()} in the hold for ${total} credits. We will sell them at the next station.`);break;}
+    if(action==='accept'){say('MAX','We cannot cover that deal right now. I have told them no.');break;}}
+   say('MAX','I passed on the deal. The freighter is moving on.');break;}
   case 'story':say(event.character||'SILAS',event.done||'Understood.');break;
  }
  return out;

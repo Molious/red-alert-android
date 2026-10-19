@@ -12,7 +12,7 @@ test('each crew member gets a distinct English voice of the right gender when th
 });
 test('few voices: reuse voices but keep per-character pitch and speed; no voices still speaks',()=>{
  const m=assignCrewVoices([{identifier:'en-us-x-iol-local',language:'en-US'}]);
- assert.equal(m.VEX.voice,'en-us-x-iol-local');assert.notEqual(m.VEX.pitch,m.MAGS.pitch);
+ assert.equal(m.VEX.voice,'en-us-x-iol-local');assert.notEqual(m.VEX.pitch,m.MAX.pitch);assert.equal(crewVoiceFor(m,'MAGS').pitch,m.MAX.pitch);
  const none=crewVoiceFor(assignCrewVoices([]),'VEX');assert.equal(none.voice,undefined);assert.ok(none.pitch>0);
  assert.equal(crewVoiceFor(m,'UNKNOWN').voice,m.WRAITH.voice);
 });

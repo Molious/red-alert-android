@@ -20,16 +20,17 @@ export function createCosmicNavigation({maplibre,container,window:w=window,onSta
  const marker=new maplibre.Marker({element:ship,rotationAlignment:'map',pitchAlignment:'viewport'});
  const pin=d.createElement('div');pin.className='mole-destination';pin.setAttribute('aria-label','Destination');pin.textContent='◆';
  const destination=new maplibre.Marker({element:pin});
- let tileError=false,latest,ready=false,disposed=false,following=true,lastPhase,heading=0,lastFix,hasMarker=false,hasDestination=false,lastRoute;
+ let tileError=false,latest,ready=false,disposed=false,following=true,lastPhase,heading=0,lastFix,hasMarker=false,hasDestination=false,lastRoute,resumeTimer=null;
  const isNorth=()=>{try{return w.localStorage.getItem('mole-beyond:map-orient')==='north';}catch{return false;}};
- function camera(s){if(!s?.fix||s.planning||!following||s.guidance?.valid===false)return;map.jumpTo({center:[s.fix.lng,s.fix.lat],zoom:Math.max(16,map.getZoom()),pitch:57,bearing:isNorth()?0:heading,padding:{top:80,bottom:0,left:0,right:0}});}
+ // The ship stays put near the bottom of the windscreen, pointing straight ahead; the map moves and turns under it.
+ function camera(s,instant=false){if(!s?.fix||s.planning||!following)return;const h=container.clientHeight||600,kmh=Number.isFinite(s.fix.speed)?s.fix.speed*3.6:0,zoom=kmh>80?15.6:kmh>50?16.1:16.6;const view={center:[s.fix.lng,s.fix.lat],zoom,pitch:57,bearing:isNorth()?0:heading,padding:{top:Math.round(h*.52),bottom:Math.round(h*.06),left:0,right:0}};if(instant||!ready)map.jumpTo(view);else map.easeTo({...view,duration:950,easing:t=>t,essential:true});}
  function update(s){
   latest=s;if(disposed||!ready)return;
   if(s.journey?.phase==='navigating'&&lastPhase!=='navigating')following=true;lastPhase=s.journey?.phase;
   if(s.route!==lastRoute){lastRoute=s.route;map.getSource('journey').setData(s.route?.points?.length?{type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'LineString',coordinates:s.route.points.map(([lat,lng])=>[lng,lat])}}]}:empty());}
   const target=s.selected||s.journey?.destination;
   if(target){destination.setLngLat([target.lng,target.lat]);if(!hasDestination){destination.addTo(map);hasDestination=true;}}else if(hasDestination){destination.remove();hasDestination=false;}
-  if(s.fix&&s.guidance?.valid!==false){
+  if(s.fix){
    if(s.fix.heading!=null&&Number.isFinite(s.fix.heading)&&s.fix.speed>1.2){heading=(s.fix.heading+360)%360;lastFix=s.fix;}
    else if(lastFix){const dx=(s.fix.lng-lastFix.lng)*111320*Math.cos(s.fix.lat*Math.PI/180),dy=(s.fix.lat-lastFix.lat)*111320;if(Math.hypot(dx,dy)>=6){heading=bearing(lastFix,s.fix);lastFix=s.fix;}}
    if(!lastFix)lastFix=s.fix;
@@ -46,7 +47,10 @@ export function createCosmicNavigation({maplibre,container,window:w=window,onSta
  map.on('error',()=>{tileError=true;onStatus('Map tiles unavailable · check internet');});
  map.on('sourcedata',e=>{if(e.sourceId==='openmaptiles'&&e.tile&&e.sourceDataType==='content'){tileError=false;if(ready)onStatus('Live cosmic road map');}});
  map.on('webglcontextlost',()=>onStatus('Map graphics interrupted · reopen navigation'));
- map.on('dragstart',()=>following=false);map.on('rotatestart',()=>following=false);
+ // Programmatic camera moves also fire rotate/drag events; only a finger on the map pauses following.
+ const userMove=e=>{if(!e||!e.originalEvent)return;following=false;clearTimeout(resumeTimer);};
+ const userDone=e=>{if(!e||!e.originalEvent)return;clearTimeout(resumeTimer);resumeTimer=setTimeout(()=>{following=true;camera(latest,true);},8000);};
+ map.on('dragstart',userMove);map.on('rotatestart',userMove);map.on('pitchstart',userMove);map.on('dragend',userDone);map.on('rotateend',userDone);map.on('pitchend',userDone);
  w.addEventListener('mole-map-orientation',orient);
- return {map,update,recenter(s){following=true;if(s)latest=s;camera(latest);},resize(){map.resize();},dispose(){disposed=true;w.removeEventListener('mole-map-orientation',orient);marker.remove();destination.remove();map.remove();delete container.parentElement.dataset.vectorReady;}};
+ return {map,update,recenter(s){following=true;clearTimeout(resumeTimer);if(s)latest=s;camera(latest,true);},resize(){map.resize();},dispose(){disposed=true;clearTimeout(resumeTimer);w.removeEventListener('mole-map-orientation',orient);marker.remove();destination.remove();map.remove();delete container.parentElement.dataset.vectorReady;}};
 }

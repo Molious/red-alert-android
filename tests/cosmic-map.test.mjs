@@ -8,7 +8,7 @@ test('cosmic map supports north/heading orientation, route coordinates, follow, 
  const {createCosmicNavigation,cosmicStyle}=await import(moduleUrl);
  const dom=new JSDOM('<section><div id="map"></div></section>',{url:'https://example.test'});
  const w=dom.window,handlers={},jumps=[],markers=[];let removed=false;
- class Map {constructor(options){this.options=options;this.sources={};this.zoom=16;this.bearing=0;this.canvas=w.document.createElement('canvas');}on(n,f){handlers[n]=f;return this;}getSource(n){return this.sources[n];}addSource(n,s){this.sources[n]={...s,setData(d){this.data=d;}};}addLayer(){}jumpTo(o){jumps.push(o);this.bearing=o.bearing;return this;}getZoom(){return this.zoom;}getBearing(){return this.bearing;}resize(){}remove(){removed=true;}getCanvas(){return this.canvas;}}
+ class Map {constructor(options){this.options=options;this.sources={};this.zoom=16;this.bearing=0;this.canvas=w.document.createElement('canvas');}on(n,f){handlers[n]=f;return this;}getSource(n){return this.sources[n];}addSource(n,s){this.sources[n]={...s,setData(d){this.data=d;}};}addLayer(){}jumpTo(o){jumps.push(o);this.bearing=o.bearing;return this;}easeTo(o){jumps.push(o);this.bearing=o.bearing;return this;}clientHeight(){}getZoom(){return this.zoom;}getBearing(){return this.bearing;}resize(){}remove(){removed=true;}getCanvas(){return this.canvas;}}
  class Marker {constructor(o){this.options=o;markers.push(this);}setLngLat(p){this.position=p;return this;}setRotation(r){this.rotation=r;return this;}addTo(){return this;}remove(){this.removed=true;}}
  const container=w.document.querySelector('#map');
  const view=createCosmicNavigation({maplibre:{Map,Marker},container,window:w,onStatus(){}});
@@ -19,9 +19,10 @@ test('cosmic map supports north/heading orientation, route coordinates, follow, 
  assert.deepEqual(markers[0].position,[153.1,-26.8]);
  w.localStorage.setItem('mole-beyond:map-orient','north');w.dispatchEvent(new w.Event('mole-map-orientation'));
  assert.equal(jumps.at(-1).bearing,0);assert.equal(markers[0].rotation,90);
- handlers.dragstart();w.localStorage.setItem('mole-beyond:map-orient','heading');w.dispatchEvent(new w.Event('mole-map-orientation'));assert.equal(jumps.at(-1).bearing,90);assert.equal(jumps.at(-1).center,undefined);const count=jumps.length;view.update({...s,fix:{...s.fix,lng:153.11}});assert.equal(jumps.length,count);
+ handlers.dragstart({originalEvent:{}});w.localStorage.setItem('mole-beyond:map-orient','heading');w.dispatchEvent(new w.Event('mole-map-orientation'));assert.equal(jumps.at(-1).bearing,90);assert.equal(jumps.at(-1).center,undefined);const count=jumps.length;view.update({...s,fix:{...s.fix,lng:153.11}});assert.equal(jumps.length,count);
  view.recenter(s);assert.equal(jumps.length,count+1);
- const previous=markers[0].position;view.update({...s,guidance:{valid:false},fix:{...s.fix,lng:154}});assert.equal(markers[0].position,previous);
+ view.update({...s,guidance:{valid:false},fix:{...s.fix,lng:153.2}});assert.deepEqual(markers[0].position,[153.2,-26.8],'off-route the map still follows the car');assert.deepEqual(jumps.at(-1).center,[153.2,-26.8]);assert.ok(jumps.at(-1).padding.top>jumps.at(-1).padding.bottom,'ship sits low in the windscreen');
+ handlers.rotatestart({});const n=jumps.length;view.update({...s,fix:{...s.fix,lng:153.21}});assert.equal(jumps.length,n+1,'programmatic rotation does not stop following');
  view.dispose();assert.ok(removed);dom.window.close();
  const style=cosmicStyle();assert.equal(style.version,8);assert.match(style.sources.openmaptiles.url,/tiles.openfreemap.org/);
  assert.ok(style.layers.some(x=>x.id==='energy-lanes'));assert.ok(style.layers.some(x=>x.id==='street-names'&&x.layout['text-rotation-alignment']==='viewport'));

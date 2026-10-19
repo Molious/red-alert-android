@@ -11,7 +11,7 @@ import {createRecognitionGate} from './recognitionGate';
 import {createSessionPreparation} from './sessionPreparation';
 import {createSpeechSession,waitForCaptureSpeech,createAudioSwitch} from './speechSession';
 import { pickLanguage, pickRecognitionService, MAX_LISTEN_MS } from './voicePolicy';
-import {assignCrewVoices,crewVoiceFor,type CrewVoice,type DeviceVoice} from './crewVoices';
+import {assignCrewVoices,crewVoiceFor,crewVoiceList,type CrewVoice,type DeviceVoice,type VoiceOption} from './crewVoices';
 
 // The native side of window.RedAlertNative: voice commands, SEXTANT's voice and GPS.
 //
@@ -205,12 +205,12 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   });
 
   // Each crew member gets their own installed voice (see crewVoices.ts), worked out once per session.
-  const crewVoices=useRef<Record<string,CrewVoice>|null>(null);
-  const loadCrewVoices=async()=>{try{const v=await Speech.getAvailableVoicesAsync();crewVoices.current=assignCrewVoices(v as DeviceVoice[]);return v;}catch{return [];}};
+  const crewVoices=useRef<Record<string,CrewVoice>|null>(null);const voiceOptions=useRef<VoiceOption[]>([]);
+  const loadCrewVoices=async()=>{try{const v=await Speech.getAvailableVoicesAsync();crewVoices.current=assignCrewVoices(v as DeviceVoice[]);voiceOptions.current=crewVoiceList(v as DeviceVoice[]);return v;}catch{return [];}};
   // Request-correlated speech: an old Android completion cannot finish a newer line.
   const speechSession = useRef<ReturnType<typeof createSpeechSession> | null>(null);
   if(!speechSession.current)speechSession.current=createSpeechSession({
-    speak:(text,callbacks,voice)=>{const cv=crewVoiceFor(crewVoices.current,voice.character);const base={language:cv.language,rate:voice.rate??cv.rate,pitch:voice.pitch??cv.pitch};
+    speak:(text,callbacks,voice)=>{const cv=crewVoiceFor(crewVoices.current,voice.character,voice.voice,voiceOptions.current);const base={language:cv.language,rate:voice.rate??cv.rate,pitch:voice.pitch??cv.pitch};
       // A chosen voice can fail (e.g. not downloaded); fall back to the default voice rather than going silent.
       if(!cv.voice){Speech.speak(text,{...base,...callbacks});return;}
       Speech.speak(text,{...base,voice:cv.voice,onDone:callbacks.onDone,onStopped:callbacks.onStopped,onError:()=>Speech.speak(text,{...base,...callbacks})});},
@@ -223,7 +223,19 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   if(!audioSwitch.current)audioSwitch.current=createAudioSwitch({stop:()=>stopSpeech(),changed:setAudioMuted,notify:value=>web.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('hybrid-audio',{detail:{muted:${value}}})); true;`)});
   const setAudioPaused=(value:boolean)=>audioSwitch.current?.set(value);
   const preparation=useRef<ReturnType<typeof createSessionPreparation>|null>(null);
-  if(!preparation.current)preparation.current=createSessionPreparation({permission:()=>Location.requestForegroundPermissionsAsync(),microphone:()=>Recognition.requestPermissionsAsync(),voices:()=>loadCrewVoices(),isActive:()=>active.current,isCurrent:r=>alive.current&&document.current===r.doc,send:(r,result)=>send(r,'session.ready',result)});
+  if(!preparation.current)preparation.current=createSessionPreparation({permission:()=>Location.requestForegroundPermissionsAsync(),microphone:()=>Recognition.requestPermissionsAsync(),voices:()=>loadCrewVoices(),isActive:()=>active.current,isCurrent:r=>alive.current&&document.current===r.doc,send:(r,result)=>send(r,'session.ready',{...result,voices:voiceOptions.current,crew:Object.fromEntries(Object.entries(crewVoices.current||{}).map(([k,v])=>[k,v.voice||'']))})});
+
+  // ---------- AI crew (optional, driver's own Anthropic key) ----------
+  const askCrew=async(r:Message)=>{
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':String(r.key),'anthropic-version':'2023-06-01'},
+        body:JSON.stringify({model:'claude-haiku-5-5',max_tokens:300,system:r.system,messages:[{role:'user',content:r.text}]})});
+      const data=await res.json().catch(()=>null);
+      if(!res.ok){send(r,'ai.reply',{error:res.status===401?'The API key was rejected. Check it in the Crew panel.':res.status===429?'Too many requests. Give it a minute.':'AI service error '+res.status+'.'});return;}
+      const answer=Array.isArray(data?.content)?data.content.filter((c:{type?:string})=>c?.type==='text').map((c:{text?:string})=>c.text||'').join('\n'):'';
+      send(r,'ai.reply',answer?{answer:answer.slice(0,4000)}:{error:'No answer came back.'});
+    }catch{send(r,'ai.reply',{error:'No internet connection for the AI crew.'});}
+  };
 
   // ---------- GPS ----------
   const clearWatch = (id: number) => {
@@ -301,6 +313,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     if (m.type === 'voice.listen') void listen(m);
     if (m.type === 'voice.cancel' && capture.current?.request.id === m.id) cancelVoice();
     if (m.type === 'speech.say') speak(m);
+    if (m.type === 'ai.ask') void askCrew(m);
     if (m.type === 'speech.cancel') stopSpeech(m.id);
     if (m.type === 'geo.search') { void (async()=>{try {
       const permission=await Location.getForegroundPermissionsAsync();

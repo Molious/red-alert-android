@@ -28,8 +28,8 @@ export function createGuidance(route,{revision=1}={}){
   }
   if(!best)return invalid();
   const corridor=Math.max(40,p.accuracy*2),outside=best.distance>corridor;
-  if(outside){off.push(p.ts);off=off.slice(-3);}else{off=[];progress=Math.max(progress,best.at);segment=best.index;}
-  const offRoute=off.length===3&&off[2]-off[0]>=5000;
+  if(outside){off.push(p.ts);off=off.slice(-2);}else{off=[];progress=Math.max(progress,best.at);segment=best.index;}
+  const offRoute=off.length===2&&off[1]-off[0]>=2500;
   last=p;recent.push(p);recent=recent.slice(-4);
   const next=route.steps.find(s=>s.type!=='depart'&&s.atMeters>=progress-15)||route.steps.at(-1);
   const distanceToTurn=Math.max(0,(next?.atMeters??total)-progress),remaining=Math.max(0,total-progress),nearTurn=distanceToTurn<=Math.max(80,speed*15),turnSoon=distanceToTurn<=Math.max(45,speed*6);

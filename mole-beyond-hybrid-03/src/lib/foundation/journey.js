@@ -20,6 +20,7 @@ export function reduceJourney(state,c){
   if(j&&!['arrived','cancelled'].includes(j.phase))throw Error('Cancel current journey first');
   s.journey={id:c.id,phase:'resolving_destination',destination:{...c.destination},routeRevision:0,verifiedMeters:0,remainingMeters:0,completedEventIds:[],activeEvent:null,arrivalAwarded:false,arrivalConfirmed:false,shields:100};return s;
  }
+ if(c.type==='live.story'){s.story={...s.story};if(c.prologue===true)s.story.prologue=true;if(typeof c.chatter==='string'&&/^[a-z0-9]{1,8}$/.test(c.chatter))s.story.chatter=[...(s.story.chatter||[]).filter(x=>x!==c.chatter),c.chatter].slice(-24);return s;}
  if(!j||j.id!==c.id)throw Error('Wrong journey');
  const active=()=>{if(['arrived','cancelled'].includes(j.phase))throw Error('Journey is finished');};
  switch(c.type){
@@ -35,7 +36,8 @@ export function reduceJourney(state,c){
    for(const [id,n] of Object.entries(o.cargo))if(n>0)addCargo(s,id,n);else if(n<0)removeCargo(s,id,-n);
    j.shields=o.shields;if(event.type==='story'&&s.contracts?.active&&s.contracts.active.id===event.contractId)s.contracts.active.beats=[...s.contracts.active.beats,'mid'];
    j.completedEventIds.push(event.id);j.activeEvent=null;}break;
-  case 'live.arrive':if(j.arrivalAwarded)return s;if(j.phase!=='navigating'||!j.arrivalConfirmed)throw Error('Arrival not confirmed');award(s,j.id,100);{const delivered=deliverContract(s);if(delivered)award(s,'contract:'+delivered.id,delivered.reward);j.deliveredContract=delivered?delivered.id:null;s.station=delivered?.station||stationForDestination(j.destination);}j.arrivalAwarded=true;j.activeEvent=null;j.phase='arrived';break;
+  case 'live.safety':active();{const ok=n=>Number.isSafeInteger(n)&&n>=0;if(!ok(c.score)||c.score>100||!ok(c.overspeedSeconds)||!ok(c.harsh))throw Error('Invalid safety rating');j.safety={score:c.score,overspeedSeconds:c.overspeedSeconds,harsh:c.harsh};}break;
+  case 'live.arrive':if(j.arrivalAwarded)return s;if(j.phase!=='navigating'||!j.arrivalConfirmed)throw Error('Arrival not confirmed');award(s,j.id,100);if(j.safety)award(s,'safe:'+j.id,Math.round(Math.max(0,Math.min(100,j.safety.score))/5));{const delivered=deliverContract(s);if(delivered)award(s,'contract:'+delivered.id,delivered.reward);j.deliveredContract=delivered?delivered.id:null;s.station=delivered?.station||stationForDestination(j.destination);}j.arrivalAwarded=true;j.activeEvent=null;j.phase='arrived';break;
   case 'live.cancel':if(j.phase==='arrived')throw Error('Journey already arrived');j.phase='cancelled';j.activeEvent=null;break;
   default:throw Error('Unknown live command');
  }

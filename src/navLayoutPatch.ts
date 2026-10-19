@@ -29,7 +29,7 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .road-status:not(.mole-alert),
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .voice-status,
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .navigation-planner,
-.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:is([data-action=destination],[data-action=launch],[data-action=home],[data-action=station]){display:none}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:is([data-action=destination],[data-action=launch],[data-action=home],[data-action=station],[data-action=crew]){display:none}
 .live-cockpit .viewport[data-nav-mode=on] .flight-actions button:is([data-action=launch],[data-action=home]):disabled{display:none}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions{flex-wrap:nowrap}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button{flex:1 1 0;min-width:0;padding:6px 4px;font-size:11px;line-height:1.2}
@@ -86,6 +86,13 @@ export const navLayoutCss = `
 .mole-dash2 .mole-bar{display:block;width:70%;height:4px;margin:3px auto 0;background:#0b1f2c;border-radius:2px;overflow:hidden}
 .mole-dash2 .mole-bar s{display:block;height:100%;width:100%;background:#5ff0ff;box-shadow:0 0 6px currentColor}
 .mole-dash2{background:#030a12b8;border-radius:6px}
+.live-cockpit .viewport[data-nav-mode=on] .mole-dash2 b{font-size:13px}
+.live-cockpit .viewport[data-nav-mode=on] .mole-dash2 small{font-size:8px}
+.live-cockpit .viewport[data-nav-mode=on] .mole-dash .mole-limit{width:30px;height:30px;flex-basis:30px;border-width:3px}
+.mole-limit{display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:#fff;border:4px solid #d22;box-sizing:border-box}
+.mole-limit b{color:#111!important;font-size:14px!important;text-shadow:none!important}
+.mole-limit.unknown{opacity:.35}
+.mole-speed b.over{color:#ff6a5c!important;text-shadow:0 0 8px #ff3b30!important}
 /* 1.0.20: controls built into the console - no boxed panel in navigation mode */
 @media (orientation:portrait){
 .live-cockpit .viewport[data-nav-mode=on]{--tray-h:150px}
@@ -150,9 +157,9 @@ export const navLayoutScript = `(function(){
    var t=dist&&dist.textContent||'',m=/(\\d+) m to next/.exec(t),r=/([\\d.]+) km remaining/.exec(t);
    big.textContent=m?(+m[1]>=1000?(m[1]/1000).toFixed(1)+' km':m[1]+' m'):'';
    document.querySelectorAll('[data-mole-left]').forEach(function(e){e.textContent=r?r[1]:'—';});
-   var sp=document.querySelector('.cockpit-dashboard [data-speed]'),sv=sp&&/^\\d+$/.test(sp.textContent.trim())?sp.textContent.trim():'0';document.querySelectorAll('[data-mole-speed]').forEach(function(e){e.textContent=sv;});var sh=document.querySelector('.cockpit-dashboard [data-shields]'),cr=document.querySelector('.cockpit-dashboard [data-credits]'),shv=sh?sh.textContent.trim():'100%';document.querySelectorAll('[data-mole-shields]').forEach(function(e){e.textContent=shv;});document.querySelectorAll('[data-mole-shield-bar]').forEach(function(e){var n=parseInt(shv,10);e.style.width=(isFinite(n)?Math.max(0,Math.min(100,n)):100)+'%';e.style.background=n<35?'#ff6a5c':n<70?'#ffb35c':'#5ff0ff';});document.querySelectorAll('[data-mole-credits]').forEach(function(e){e.textContent=cr?cr.textContent.trim():'0';});
+   var sp=document.querySelector('.cockpit-dashboard [data-speed]'),sv=sp&&/^\\d+$/.test(sp.textContent.trim())?sp.textContent.trim():'0';document.querySelectorAll('[data-mole-speed]').forEach(function(e){e.textContent=sv;});var lim=document.querySelector('.cockpit-dashboard [data-limit]'),lv=lim?lim.textContent.trim():'—',saf=document.querySelector('.cockpit-dashboard [data-safety]'),over=/^\\d+$/.test(lv)&&+sv>+lv+4;document.querySelectorAll('[data-mole-limit]').forEach(function(e){e.textContent=lv;});document.querySelectorAll('[data-mole-limit-box]').forEach(function(e){e.classList.toggle('unknown',!/^\\d+$/.test(lv));});document.querySelectorAll('[data-mole-speed]').forEach(function(e){e.classList.toggle('over',over);});document.querySelectorAll('[data-mole-safety]').forEach(function(e){e.textContent=saf?saf.textContent.trim():'—';});var sh=document.querySelector('.cockpit-dashboard [data-shields]'),cr=document.querySelector('.cockpit-dashboard [data-credits]'),shv=sh?sh.textContent.trim():'100%';document.querySelectorAll('[data-mole-shields]').forEach(function(e){e.textContent=shv;});document.querySelectorAll('[data-mole-shield-bar]').forEach(function(e){var n=parseInt(shv,10);e.style.width=(isFinite(n)?Math.max(0,Math.min(100,n)):100)+'%';e.style.background=n<35?'#ff6a5c':n<70?'#ffb35c':'#5ff0ff';});document.querySelectorAll('[data-mole-credits]').forEach(function(e){e.textContent=cr?cr.textContent.trim():'0';});
   }
-  var mo=new MutationObserver(upd);[next,dist,document.querySelector('.cockpit-dashboard [data-speed]'),document.querySelector('.cockpit-dashboard [data-shields]'),document.querySelector('.cockpit-dashboard [data-credits]')].forEach(function(e){if(e)mo.observe(e,{childList:true,characterData:true,subtree:true});});
+  var mo=new MutationObserver(upd);[next,dist,document.querySelector('.cockpit-dashboard [data-speed]'),document.querySelector('.cockpit-dashboard [data-shields]'),document.querySelector('.cockpit-dashboard [data-credits]'),document.querySelector('.cockpit-dashboard [data-limit]'),document.querySelector('.cockpit-dashboard [data-safety]')].forEach(function(e){if(e)mo.observe(e,{childList:true,characterData:true,subtree:true});});
   upd();
  }
 
@@ -206,37 +213,17 @@ export const navLayoutScript = `(function(){
  function placeDash(){
   var con=document.querySelector('.live-cockpit .mole-console'),dash=con&&con.querySelector('.mole-dash:not(.mole-dash2)');if(!dash)return;
   var H=con.offsetHeight,W=con.offsetWidth,key=H+'x'+W;if(!H||key===dashSize)return;dashSize=key;
-  dash.style.left=(W*0.595).toFixed(1)+'px';dash.style.top=(H-148+(0.57-0.5)*296).toFixed(1)+'px';dash.style.width=(W*0.22).toFixed(1)+'px';dash.style.height='38px';
-  var d2=con.querySelector('.mole-dash2');if(d2){d2.style.left=(W*0.345).toFixed(1)+'px';d2.style.top=dash.style.top;d2.style.width=(W*0.235).toFixed(1)+'px';d2.style.height='38px';}
+  dash.style.left=(W*0.565).toFixed(1)+'px';dash.style.top=(H-148+(0.57-0.5)*296).toFixed(1)+'px';dash.style.width=(W*0.32).toFixed(1)+'px';dash.style.height='38px';
+  var d2=con.querySelector('.mole-dash2');if(d2){d2.style.left=(W*0.3).toFixed(1)+'px';d2.style.top=dash.style.top;d2.style.width=(W*0.255).toFixed(1)+'px';d2.style.height='38px';}
  }
  window.addEventListener('resize',function(){dashSize='';setTimeout(placeDash,60);});
  function seats(){
   var view=document.querySelector('.live-cockpit .viewport');
-  if(view&&!view.querySelector('.mole-console')){var con=document.createElement('div');con.className='mole-console';var dash=document.createElement('div');dash.className='mole-dash';dash.innerHTML='<div><b data-mole-speed>0</b><small>km/h</small></div><div><b data-mole-left>—</b><small>km left</small></div>';con.appendChild(dash);var dash2=document.createElement('div');dash2.className='mole-dash mole-dash2';dash2.innerHTML='<div><b data-mole-shields>100%</b><small>shields</small><i class="mole-bar"><s data-mole-shield-bar></s></i></div><div><b data-mole-credits>0</b><small>credits</small></div>';con.appendChild(dash2);var g=captainEl('seat');if(g)con.appendChild(g);view.appendChild(con);}
+  if(view&&!view.querySelector('.mole-console')){var con=document.createElement('div');con.className='mole-console';var dash=document.createElement('div');dash.className='mole-dash';dash.innerHTML='<div class="mole-speed"><b data-mole-speed>0</b><small>km/h</small></div><div class="mole-limit" data-mole-limit-box><b data-mole-limit>—</b></div><div><b data-mole-left>—</b><small>km left</small></div>';con.appendChild(dash);var dash2=document.createElement('div');dash2.className='mole-dash mole-dash2';dash2.innerHTML='<div><b data-mole-safety>—</b><small>safety</small></div><div><b data-mole-shields>100%</b><small>shields</small><i class="mole-bar"><s data-mole-shield-bar></s></i></div><div><b data-mole-credits>0</b><small>credits</small></div>';con.appendChild(dash2);var g=captainEl('seat');if(g)con.appendChild(g);view.appendChild(con);}
   placeDash();
   var con2=view&&view.querySelector('.mole-console'),cur=con2&&con2.querySelector('.mole-captain');
   if(con2&&cur&&cur.dataset.captain!==captainKey()){var ng=captainEl('seat');if(ng)con2.replaceChild(ng,cur);}
   var ls=document.querySelector('.launch-scene');if(ls&&!ls.querySelector('.mole-captain')){var lg=captainEl('launch');if(lg)ls.insertBefore(lg,ls.querySelector('.launch-copy'));}
- }
-
- // --- tap-to-talk microphone (1.0.19) ---
- // The game switches hands-free listening on at launch and reopens the mic after every phrase, so
- // Android's mic keeps clicking on and off. Here the mic stays off until the driver taps Mic, takes
- // one command, then switches off again.
- var micTapAt=0,micOffTimer=null;
- function micBtn(){return document.querySelector('.navigation-strip [data-action=voice]');}
- function micIsOn(){var b=micBtn();return !!b&&b.getAttribute('aria-pressed')==='true';}
- function micOff(){if(micIsOn()){try{window.dispatchEvent(new CustomEvent('cockpit-listen'));}catch(e){}}}
- document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('button[data-action=voice]');if(t)micTapAt=Date.now();},true);
- function hookMic(){
-  var R=window.RedAlertNative;if(!R||R.__moleMic||typeof R.listenOnce!=='function')return;
-  var o=R.listenOnce;R.listenOnce=function(done){return o.call(R,function(){var r=done.apply(this,arguments);clearTimeout(micOffTimer);micOffTimer=setTimeout(micOff,150);return r;});};R.__moleMic=1;
- }
- hookMic();var micTries=0,micTimer=setInterval(function(){hookMic();if(++micTries>40)clearInterval(micTimer);},250);
- function micWatch(){
-  var b=micBtn();if(!b||b.__moleMicWatch)return;b.__moleMicWatch=1;
-  function check(){if(b.getAttribute('aria-pressed')==='true'&&Date.now()-micTapAt>1500){clearTimeout(micOffTimer);micOffTimer=setTimeout(micOff,50);}}
-  new MutationObserver(check).observe(b,{attributes:true,attributeFilter:['aria-pressed']});check();
  }
 
  // --- character screen: let the driver end a leftover route to change character (1.0.19) ---
@@ -253,7 +240,7 @@ export const navLayoutScript = `(function(){
  function wire(){
   var dash=document.querySelector('.cockpit-dashboard');if(!dash||dash.__moleNav)return;dash.__moleNav=1;
   var view=dash.closest('.viewport');var phase=dash.querySelector('[data-phase]');var actions=dash.querySelector('.flight-actions');
-  var KEYS={repeat:'REPEAT',recenter:'RECENTRE',mute:'MUTE',unmute:'SOUND\\nOFF',"pause-story":'STORY',"resume-story":'STORY\\nPAUSED',save:'SAVE',cancel:'ABORT',resume:'RESUME',retry:'RETRY\\nROUTE',destination:'DEST',station:'STATION',launch:'LAUNCH',home:'CREW',voice:'MIC',delegate:'CREW\\nHANDLE'};
+  var KEYS={repeat:'REPEAT',recenter:'RECENTRE',mute:'MUTE',unmute:'SOUND\\nOFF',"pause-story":'STORY',"resume-story":'STORY\\nPAUSED',save:'SAVE',cancel:'ABORT',resume:'RESUME',retry:'RETRY\\nROUTE',destination:'DEST',station:'STATION',crew:'CREW',launch:'LAUNCH',home:'CREW',voice:'MIC',delegate:'CREW\\nHANDLE'};
   function keyLabels(){if(!actions)return;actions.querySelectorAll('button').forEach(function(b){var k=b.classList.contains('tray-toggle')?(dash.classList.contains('tray-open')?'CLOSE':'MENU'):(b.dataset.action==='resume'&&/start gps/i.test(b.textContent||'')?'START\\nGPS':KEYS[b.dataset.action]);if(k&&b.getAttribute('data-key')!==k)b.setAttribute('data-key',k);});}
   if(actions)new MutationObserver(keyLabels).observe(actions,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-action']});
   if(actions&&!actions.querySelector('.tray-toggle')){
@@ -262,8 +249,12 @@ export const navLayoutScript = `(function(){
    actions.appendChild(t);
   }
   keyLabels();
+  // Stopped for 30 s mid-journey: show the bridge. Moving again (8 km/h+): back to the cockpit.
+  var speedEl=dash.querySelector('[data-speed]'),stoppedSince=0,parkedView=false;
+  function moving(){var v=parseInt(speedEl&&speedEl.textContent,10);return isFinite(v)?v:null;}
+  setInterval(function(){var v=moving(),was=parkedView;if(v!==null&&v>=8){stoppedSince=0;parkedView=false;}else if(v!==null&&v<=2){if(!stoppedSince)stoppedSince=Date.now();if(Date.now()-stoppedSince>=30000)parkedView=true;}if(was!==parkedView)sync();},1000);
   function sync(){
-   var p=(phase&&phase.textContent||'').trim().toLowerCase();var on=PHASES.indexOf(p)>=0;
+   var p=(phase&&phase.textContent||'').trim().toLowerCase();var on=PHASES.indexOf(p)>=0&&!(parkedView&&p!=='launching');if(view)view.dataset.stopped=parkedView&&PHASES.indexOf(p)>=0?'true':'false';
    var want=on?'on':'off';if(view&&view.dataset.navMode!==want){var was=view.dataset.navMode;view.dataset.navMode=want;if(!was&&!on)return;if(!on){dash.classList.remove('tray-open');var b=dash.querySelector('.tray-toggle');if(b){b.textContent='More controls';b.setAttribute('aria-expanded','false');}}setTimeout(resize,50);}
   }
   if(phase)new MutationObserver(sync).observe(phase,{childList:true,characterData:true,subtree:true});
@@ -272,6 +263,6 @@ export const navLayoutScript = `(function(){
   if(status){new MutationObserver(alertSync).observe(status,{childList:true,characterData:true,subtree:true});alertSync();}
   sync();
  }
- function start(){install();bridgeArt();wire();windscreen();hud();seats();micWatch();charUnlock();new MutationObserver(function(){if(!document.getElementById('mole-nav-layout'))install();bridgeArt();wire();windscreen();hud();seats();micWatch();charUnlock();}).observe(document.documentElement,{childList:true,subtree:true});}
+ function start(){install();bridgeArt();wire();windscreen();hud();seats();charUnlock();new MutationObserver(function(){if(!document.getElementById('mole-nav-layout'))install();bridgeArt();wire();windscreen();hud();seats();charUnlock();}).observe(document.documentElement,{childList:true,subtree:true});}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();`;

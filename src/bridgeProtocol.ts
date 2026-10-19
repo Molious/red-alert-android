@@ -18,6 +18,9 @@ export type Message = {
   pitch?: number;
   rate?: number;
   character?: string;
+  voice?: string;
+  key?: string;
+  system?: string;
 };
 
 const TYPES = new Set([
@@ -33,6 +36,7 @@ const TYPES = new Set([
   'session.prepare',
   'session.cancel',
   'audio.state',
+  'ai.ask',
 ]);
 
 export function parseBridgeMessage(raw: string, url: string): Message | null {
@@ -55,6 +59,8 @@ export function parseBridgeMessage(raw: string, url: string): Message | null {
     if (m.type === 'speech.say' && m.pitch !== undefined && !(typeof m.pitch === 'number' && m.pitch >= 0.5 && m.pitch <= 2)) return null;
     if (m.type === 'speech.say' && m.rate !== undefined && !(typeof m.rate === 'number' && m.rate >= 0.5 && m.rate <= 2)) return null;
     if (m.type === 'speech.say' && m.character !== undefined && !(typeof m.character === 'string' && /^[A-Z]{2,12}$/.test(m.character))) return null;
+    if (m.type === 'speech.say' && m.voice !== undefined && !(typeof m.voice === 'string' && /^[\w#.\-]{1,100}$/.test(m.voice))) return null;
+    if (m.type === 'ai.ask' && !(typeof m.key === 'string' && /^sk-ant-[\w-]{20,200}$/.test(m.key) && typeof m.system === 'string' && m.system.length <= 4000 && typeof m.text === 'string' && m.text.trim().length > 0 && m.text.length <= 2000)) return null;
     if(m.type === 'geo.search' && (typeof m.text !== 'string' || m.text.trim().length < 3 || m.text.length > 200))return null;
     if(m.type==='journey.active'&&typeof m.active!=='boolean')return null;
     if(m.type==='audio.state'&&typeof m.muted!=='boolean')return null;
