@@ -47,6 +47,7 @@ jobs:
           java-version: 21
       - name: Configure Java toolchains and Android SDK
         run: |
+          exec > >(tee /tmp/mole-sdk-setup.log) 2>&1
           mkdir -p "$HOME/.gradle"
           printf 'org.gradle.java.installations.paths=%s\n' "$JAVA_HOME_17_X64" >> "$HOME/.gradle/gradle.properties"
           python - <<'PY'
@@ -103,11 +104,14 @@ jobs:
       - name: Publish failure reference
         if: failure() && github.ref_name == 'build/mole-beyond-1.0.13'
         run: |
+          mkdir -p artifacts
+          if [ -f /tmp/mole-sdk-setup.log ]; then cp /tmp/mole-sdk-setup.log artifacts/sdk-setup.log; fi
+          if [ -f apk-build.log ]; then cp apk-build.log artifacts/apk-build.log; fi
           python - <<'PY'
           import json,os,pathlib
           pathlib.Path('artifacts').mkdir(exist_ok=True)
           pathlib.Path('artifacts/build-1.0.13-status.json').write_text(json.dumps({'state':'failed','version':'1.0.13','run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
           PY
-          git add artifacts/build-1.0.13-status.json
+          git add artifacts/
           git commit -m 'Record Android build failure [skip ci]'
           git push origin HEAD:refs/heads/$BUILD_BRANCH
