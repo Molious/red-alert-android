@@ -64,3 +64,12 @@ test('the chosen captain sits in the navigation console with the bridge and cons
   assert.equal(seat.querySelectorAll('img').length,2);
  }finally{dom.window.close();}
 });
+test('compact tray keeps Resume story reachable and surfaces journey warnings',async()=>{
+ assert.ok(!/\[data-action=resume-story\]/.test(navLayoutCss.split('\n').find(l=>l.includes('data-action=pause-story'))||''));
+ const {dom,d}=await cockpit();
+ try{
+  const status=d.querySelector('.cockpit-dashboard .road-status');
+  status.textContent='Journey paused: test';await tick();assert.ok(status.classList.contains('mole-alert'));
+  status.textContent='Navigating to Ann Street';await tick();assert.ok(!status.classList.contains('mole-alert'));
+ }finally{dom.window.close();}
+});

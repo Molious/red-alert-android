@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: [main, build/mole-beyond-1.0.17]
+    branches: [main, build/mole-beyond-1.0.18]
     paths-ignore:
       - 'artifacts/**'
   workflow_dispatch:
@@ -17,20 +17,20 @@ jobs:
     env:
       CI: '1'
       EXPO_NO_TELEMETRY: '1'
-      BUILD_BRANCH: build/mole-beyond-1.0.17
+      BUILD_BRANCH: build/mole-beyond-1.0.18
     steps:
       - uses: actions/checkout@v4
       - name: Publish build-start reference
-        if: github.ref_name == 'build/mole-beyond-1.0.17'
+        if: github.ref_name == 'build/mole-beyond-1.0.18'
         run: |
           mkdir -p artifacts
           python - <<'PY'
           import json,os,pathlib
-          pathlib.Path('artifacts/build-1.0.17-status.json').write_text(json.dumps({'state':'running','version':'1.0.17','source_commit':os.environ['GITHUB_SHA'],'run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
+          pathlib.Path('artifacts/build-1.0.18-status.json').write_text(json.dumps({'state':'running','version':'1.0.18','source_commit':os.environ['GITHUB_SHA'],'run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add artifacts/build-1.0.17-status.json
+          git add artifacts/build-1.0.18-status.json
           git commit -m 'Record Android APK build start [skip ci]'
           git push origin HEAD:refs/heads/$BUILD_BRANCH
       - uses: actions/setup-node@v4
@@ -96,16 +96,16 @@ jobs:
       - name: Verify APK and prepare download
         run: |
           mkdir -p artifacts
-          cp android/app/build/outputs/apk/release/app-release.apk artifacts/MoleBeyond-1.0.17-arm64.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs artifacts/MoleBeyond-1.0.17-arm64.apk > artifacts/APK-VERIFICATION.txt
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/MoleBeyond-1.0.17-arm64.apk > artifacts/APK-METADATA.txt
-          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 artifacts/MoleBeyond-1.0.17-arm64.apk
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/MoleBeyond-1.0.18-arm64.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs artifacts/MoleBeyond-1.0.18-arm64.apk > artifacts/APK-VERIFICATION.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/MoleBeyond-1.0.18-arm64.apk > artifacts/APK-METADATA.txt
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 artifacts/MoleBeyond-1.0.18-arm64.apk
           python - <<'PY'
           import pathlib,hashlib,json,os,zipfile
-          p=pathlib.Path('artifacts/MoleBeyond-1.0.17-arm64.apk')
+          p=pathlib.Path('artifacts/MoleBeyond-1.0.18-arm64.apk')
           assert p.stat().st_size<100*1024*1024,'APK exceeds GitHub per-file download limit'
           metadata=pathlib.Path('artifacts/APK-METADATA.txt').read_text()
-          for s in ["name='com.molious.molebeyondtest'","versionName='1.0.17'","versionCode='18'","native-code: 'arm64-v8a'"]:
+          for s in ["name='com.molious.molebeyondtest'","versionName='1.0.18'","versionCode='19'","native-code: 'arm64-v8a'"]:
               assert s in metadata,s
           source=pathlib.Path('src/hybridHtml.ts').read_text()
           html=json.loads(source.removeprefix('export default ').strip().removesuffix(';'))
@@ -114,22 +114,22 @@ jobs:
               bundle=z.read('assets/index.android.bundle')
               assert html.encode() in bundle or html.encode('utf-16-le') in bundle,'Latest game document missing from compiled APK'
           digest=hashlib.sha256(p.read_bytes()).hexdigest()
-          pathlib.Path('artifacts/MoleBeyond-1.0.17-arm64.apk.sha256').write_text(digest+'  '+p.name+'\n')
-          pathlib.Path('artifacts/build-1.0.17-status.json').write_text(json.dumps({'state':'success','version':'1.0.17','version_code':18,'apk':p.name,'sha256':digest,'bytes':p.stat().st_size,'source_commit':os.environ['GITHUB_SHA'],'signing':'template debug/test key','physical_device_tested':False,'run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
+          pathlib.Path('artifacts/MoleBeyond-1.0.18-arm64.apk.sha256').write_text(digest+'  '+p.name+'\n')
+          pathlib.Path('artifacts/build-1.0.18-status.json').write_text(json.dumps({'state':'success','version':'1.0.18','version_code':19,'apk':p.name,'sha256':digest,'bytes':p.stat().st_size,'source_commit':os.environ['GITHUB_SHA'],'signing':'template debug/test key','physical_device_tested':False,'run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: MoleBeyond-1.0.17-arm64
+          name: MoleBeyond-1.0.18-arm64
           path: artifacts/
           if-no-files-found: error
       - name: Publish verified APK on the build branch
-        if: github.ref_name == 'build/mole-beyond-1.0.17'
+        if: github.ref_name == 'build/mole-beyond-1.0.18'
         run: |
           git add artifacts/
-          git commit -m 'Publish verified Mole Beyond 1.0.17 APK [skip ci]'
+          git commit -m 'Publish verified Mole Beyond 1.0.18 APK [skip ci]'
           git push origin HEAD:refs/heads/$BUILD_BRANCH
       - name: Publish failure reference
-        if: failure() && github.ref_name == 'build/mole-beyond-1.0.17'
+        if: failure() && github.ref_name == 'build/mole-beyond-1.0.18'
         run: |
           mkdir -p artifacts
           if [ -f /tmp/mole-sdk-setup.log ]; then cp /tmp/mole-sdk-setup.log artifacts/sdk-setup.log; fi
@@ -137,7 +137,7 @@ jobs:
           python - <<'PY'
           import json,os,pathlib
           pathlib.Path('artifacts').mkdir(exist_ok=True)
-          pathlib.Path('artifacts/build-1.0.17-status.json').write_text(json.dumps({'state':'failed','version':'1.0.17','run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
+          pathlib.Path('artifacts/build-1.0.18-status.json').write_text(json.dumps({'state':'failed','version':'1.0.18','run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
           PY
           git add artifacts/
           git commit -m 'Record Android build failure [skip ci]'

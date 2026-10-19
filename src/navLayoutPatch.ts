@@ -36,15 +36,17 @@ export const navLayoutCss = `
 }
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .dash-heading,
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .dash-readouts,
-.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .road-status,
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .road-status:not(.mole-alert),
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .voice-status,
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .navigation-planner,
-.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:is([data-action=destination],[data-action=launch],[data-action=mute],[data-action=unmute],[data-action=pause-story],[data-action=resume-story],[data-action=save],[data-action=home]){display:none}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:is([data-action=destination],[data-action=launch],[data-action=mute],[data-action=unmute],[data-action=pause-story],[data-action=save],[data-action=home]){display:none}
 .live-cockpit .viewport[data-nav-mode=on] .flight-actions button[data-action=voice]{display:none}
 .live-cockpit .viewport[data-nav-mode=on] .flight-actions button:is([data-action=launch],[data-action=home]):disabled{display:none}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions{flex-wrap:nowrap}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button{flex:1 1 0;min-width:0;padding:6px 4px;font-size:11px;line-height:1.2}
 .live-cockpit .viewport[data-nav-mode=on] .crew-comms{margin:0 0 6px;padding:4px 6px}
+.live-cockpit .viewport[data-nav-mode=on] .road-status.mole-alert{color:#ffd0a8;border-left:2px solid #ff9a3c;padding:3px 6px;margin:0 0 5px;font-size:11px}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open):has(.mole-alert) .crew-comms{display:none}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .crew-comms span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .live-cockpit .cockpit-dashboard .tray-toggle{display:none}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard .tray-toggle{display:block;background:#123a46;border-color:#77e3de}
@@ -244,6 +246,9 @@ export const navLayoutScript = `(function(){
    var want=on?'on':'off';if(view&&view.dataset.navMode!==want){var was=view.dataset.navMode;view.dataset.navMode=want;if(!was&&!on)return;if(!on){dash.classList.remove('tray-open');var b=dash.querySelector('.tray-toggle');if(b){b.textContent='More controls';b.setAttribute('aria-expanded','false');}}setTimeout(resize,50);}
   }
   if(phase)new MutationObserver(sync).observe(phase,{childList:true,characterData:true,subtree:true});
+  var status=dash.querySelector('.road-status');
+  function alertSync(){if(!status)return;status.classList.toggle('mole-alert',/paused|error|failed|lost|unavailable|denied|could not/i.test(status.textContent||''));}
+  if(status){new MutationObserver(alertSync).observe(status,{childList:true,characterData:true,subtree:true});alertSync();}
   sync();
  }
  function start(){install();bridgeArt();wire();windscreen();hud();seats();new MutationObserver(function(){if(!document.getElementById('mole-nav-layout'))install();bridgeArt();wire();windscreen();hud();seats();}).observe(document.documentElement,{childList:true,subtree:true});}
