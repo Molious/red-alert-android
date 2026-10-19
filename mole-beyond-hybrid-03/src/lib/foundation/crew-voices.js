@@ -2,7 +2,7 @@
 // change any of them in the crew voice check (kept on this device).
 export const CREW_VOICE_KEY='mole-beyond:crew-voices';
 export const CREW_ROSTER=[
- {id:'WRAITH',name:'Wraith',role:'Navigation',gender:'female',intro:'Wraith, navigation. I will get us there, Captain. Every turn, every time.'},
+ {id:'WRAITH',name:'Wraith',role:'Navigation',gender:'male',intro:'Wraith, navigation. I will get us there, Captain. Every turn, every time.'},
  {id:'VEX',name:'Vex',role:'Weapons',gender:'male',intro:'Vex, weapons. Anything follows us home, I make it regret it.'},
  {id:'SILAS',name:'Silas',role:'Scanners and targeting',gender:'male',intro:'Silas. Scanners and targeting. I see what is coming before it arrives.'},
  {id:'BASTION',name:'Bastion',role:'Shields and engineering',gender:'male',intro:'Bastion, engineering. She holds together because I tell her to.'},
@@ -12,6 +12,8 @@ export const CREW_ROSTER=[
 export function createCrewVoices({storage}={}){
  let options=[],suggested={},chosen={};
  try{chosen=JSON.parse(storage?.getItem(CREW_VOICE_KEY)||'{}')||{};}catch{chosen={};}
+ // 1.0.24: Wraith is male. Drop any earlier pick for Wraith so the new default applies.
+ if(chosen.__v!==2){delete chosen.WRAITH;chosen.__v=2;try{storage?.setItem(CREW_VOICE_KEY,JSON.stringify(chosen));}catch{}}
  const save=()=>{try{storage?.setItem(CREW_VOICE_KEY,JSON.stringify(chosen));}catch{}};
  const valid=id=>options.some(o=>o.id===id);
  return {

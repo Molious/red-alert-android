@@ -44,11 +44,11 @@ export const CHARACTERS = [
     id: 'wraith', name: 'Wraith', archetype: 'Ghost', color: '#a974ff',
     portrait: '/images/pilots/wraith-narrative.webp',
     race: "Insectoid", station: "Navigation",
-    backstory: "Wraith lost their entire hive in the war. Quiet, sly and difficult to pin down, they found a new hive among the Commander's outcasts. The crew is now their family, and they would die to protect it.",
+    backstory: "Wraith lost his entire hive in the war. Quiet, sly and difficult to pin down, he found a new hive among the Commander's outcasts. The crew is now his family, and he would die to protect it.",
     blurb: 'Low, sly and never where you think.',
     perk: 'Longer cloak · +2 cloak charges · enemies hit 30% less often', tradeoff: 'Lowest weapon damage',
     mods: { cloakTime: 1.5, cloakCap: 2, enemyHit: 0.7, damage: 0.8 },
-    voice: { pitch: 1.0, rate: 0.84, prefer: 'female' },
+    voice: { pitch: 0.9, rate: 0.84, prefer: 'male' },
     lines: { pick: "Wraith. They won't see us coming.", lock: 'There you are.', kill: 'Gone, like it never was.' },
   },
   {

@@ -1,7 +1,7 @@
 // The living bridge: the prologue on your first launch, and the crew talking among themselves (and to
 // you) in the quiet stretches of a drive. Lines are short so they fit between directions.
 //
-// The crew: Wraith (navigation, lost their hive), Vex (weapons, owes a human his life), Silas (scanners,
+// The crew: Wraith (navigation, lost his hive), Vex (weapons, owes a human his life), Silas (scanners,
 // living light, keeps an archive with secrets about the ship), Bastion (engineering, survived Earth's
 // fall by serving the conquerors and watches the ship's mind), Max (salvage and trade, a stowaway who
 // earned her berth) and Chet (the rebuilt AI ship). The captain is the one who gave them a home.

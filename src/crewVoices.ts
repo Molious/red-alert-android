@@ -12,7 +12,7 @@ type Profile = {gender: Gender; accents: string[]; pitch: number; rate: number};
 
 // Order matters: earlier characters get first pick of the best voices.
 export const CREW_PROFILES: Record<string, Profile> = {
-  WRAITH: {gender: 'female', accents: ['en-au', 'en-gb', 'en-us'], pitch: 1.0, rate: 0.95}, // navigator: clear, unhurried
+  WRAITH: {gender: 'male', accents: ['en-au', 'en-gb', 'en-us'], pitch: 0.9, rate: 0.95}, // navigator: low, clear, unhurried
   VEX: {gender: 'male', accents: ['en-us', 'en-au', 'en-gb'], pitch: 0.75, rate: 1.06},
   SILAS: {gender: 'male', accents: ['en-gb', 'en-in', 'en-us'], pitch: 0.85, rate: 0.92},
   BASTION: {gender: 'male', accents: ['en-au', 'en-gb', 'en-us'], pitch: 0.65, rate: 0.88},
