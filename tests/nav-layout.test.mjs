@@ -40,18 +40,18 @@ test('windscreen adds the space sky, ship marker and a remembered heading-up / n
  try{
   await tick(60);
   const nav=d.querySelector('.live-navigation');
-  assert.ok(nav.querySelector('.mole-sky'));assert.ok(nav.querySelector('.mole-ship svg'));
+  assert.ok(nav.querySelector('.mole-orient'));
+  const credit=d.querySelector('.mole-map-credit');assert.match(credit.textContent,/© OpenStreetMap contributors.*OpenFreeMap/);assert.equal(credit.parentElement,nav.closest('.viewport'));
   const btn=nav.querySelector('.mole-orient');assert.equal(btn.textContent,'Heading up');
   btn.click();assert.equal(btn.textContent,'North up');assert.equal(dom.window.localStorage.getItem('mole-beyond:map-orient'),'north');
   btn.click();assert.equal(dom.window.localStorage.getItem('mole-beyond:map-orient'),'heading');
-  assert.match(navLayoutCss,/rotateX\(52deg\) rotate\(var\(--map-rot,0deg\)\)/);
+  assert.doesNotMatch(navLayoutCss,/rotateX|--map-rot|leaflet-tile-pane/);
+  assert.match(navLayoutCss,/mask-image/);
  }finally{dom.window.close();}
 });
-test('heading comes from GPS when moving and from travelled distance otherwise',()=>{
- let tap;const w={localStorage:{getItem(){return null},setItem(){}},addEventListener(){},requestAnimationFrame(){},setInterval(){return 1},clearInterval(){}};
- const doc={readyState:'loading',addEventListener(){},head:null};
- new Function('window','document','localStorage','setInterval','clearInterval','requestAnimationFrame',navLayoutScript)(w,doc,w.localStorage,w.setInterval,w.clearInterval,w.requestAnimationFrame);
- tap=w.__moleTapFix;assert.equal(typeof tap,'function');
+test('map presentation no longer intercepts native GPS or rotates the DOM',()=>{
+ assert.ok(!navLayoutScript.includes('__moleTapFix'));assert.ok(!navLayoutScript.includes('--map-rot'));
+ assert.ok(navLayoutScript.includes('mole-map-orientation'));
 });
 
 test('the chosen captain sits in the navigation console with the bridge and console artwork installed',async()=>{

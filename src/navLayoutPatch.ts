@@ -1,25 +1,15 @@
-// Navigation layout (1.0.14). Injected next to the native bridge so the bundled game in
-// src/hybridHtml.ts stays byte-for-byte unchanged and survives a future re-bundle.
-//
-// While a journey is under way (navigating / recalculating / signal lost / launching):
-//  - the road map fills most of the screen; the dashboard collapses to a short tray
-//  - the tray keeps crew comms plus Repeat direction, Recenter, Cancel journey and a
-//    "More controls" toggle that expands the full dashboard
-//  - the seated crew sit in their own strip between the map and the tray, so they no
-//    longer cover the bottom of the map or the OpenStreetMap credit
-//  - map tiles get more contrast and the decorative planet/nebula are toned down so
-//    street names are readable
-//  - duplicate readouts are hidden in the tray (direction repeated in the status line,
-//    second Mic button, mic status line, disabled Launch/Character buttons)
-// Parked mode (full bridge view) is unchanged.
+// Navigation presentation only. The map camera supplies pitch/bearing; artwork masks frame its glass.
+// Parked mode, guidance, microphone policy and dialogue behavior are preserved.
 
-export const NAV_LAYOUT_VERSION = 3;
+export const NAV_LAYOUT_VERSION = 4;
 
 // Source of the turn classifier used inside the page (kept as a string: release builds run on
 // Hermes, which does not keep function source text).
 export const classifyTurnSource = "function classifyTurn(t){t=String(t||'').toLowerCase();if(/u-?turn/.test(t))return 'uturn';if(/arriv|destination|you have reached/.test(t))return 'arrive';if(/roundabout|rotary/.test(t))return 'roundabout';if(/(slight|keep|bear) left/.test(t))return 'slight-left';if(/(slight|keep|bear) right/.test(t))return 'slight-right';if(/\\bleft\\b/.test(t))return 'left';if(/\\bright\\b/.test(t))return 'right';return 'straight';}";
 
 export const NAV_PHASES = ['navigating', 'recalculating', 'signal lost', 'launching'];
+
+export const navFrameMask = 'url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201280%20720%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cmask%20id%3D%22glass%22%3E%3Crect%20width%3D%221280%22%20height%3D%22720%22%20fill%3D%22white%22%2F%3E%3Cpath%20fill%3D%22black%22%20d%3D%22M0%2069%20L122%2055%20L264%20340%20L232%20346%20L0%20167Z%20M174%2050%20Q740%2066%201198%207%20L1271%20197%20L1280%20251%20L1196%20348%20L301%20350Z%22%2F%3E%3Cpath%20fill%3D%22black%22%20d%3D%22M0%20150%20Q50%20125%20106%20136%20Q206%20130%20231%20242%20L245%20311%20Q329%20345%20351%20419%20L363%20498%20Q427%20546%20449%20585%20L449%20720%20L0%20720Z%22%2F%3E%3C%2Fmask%3E%3C%2Fdefs%3E%3Crect%20width%3D%221280%22%20height%3D%22720%22%20fill%3D%22white%22%20mask%3D%22url%28%23glass%29%22%2F%3E%3C%2Fsvg%3E")';
 
 export const navLayoutCss = `
 @media (orientation:portrait){
@@ -49,20 +39,15 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .crew-comms span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .live-cockpit .cockpit-dashboard .tray-toggle{display:none}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard .tray-toggle{display:block;background:#123a46;border-color:#77e3de}
-.live-cockpit .viewport[data-nav-mode=on] .road-map .leaflet-tile-pane{opacity:1;filter:invert(1) hue-rotate(185deg) saturate(.55) contrast(1.4) brightness(1.08)}
 .live-cockpit .viewport[data-nav-mode=on] .space-nebula{opacity:.3}
 .live-cockpit .viewport[data-nav-mode=on] .space-stars{opacity:.35}
 .live-cockpit .viewport[data-nav-mode=on] :is(.space-planet,.space-moon){display:none}
-.live-cockpit .road-map path[fill="#23cfee"]{opacity:0}
-.live-cockpit .road-map path[stroke="#4ee4ff"]{filter:drop-shadow(0 0 3px #b48cff) drop-shadow(0 0 9px #5a3fb0)}
 .live-cockpit .live-navigation>.leaflet-control-container{position:absolute;inset:0;z-index:460;pointer-events:none}
 .live-cockpit .live-navigation .leaflet-control-attribution{font-size:9px;background:#e3f1f4d9;color:#162632}
 .live-cockpit .viewport[data-nav-mode=on] .live-navigation{border-color:#ffb35c;box-shadow:0 0 0 5px #120c08e6,0 0 0 6px #ff9a3c77,0 0 24px #ff8a2a40;background:radial-gradient(ellipse at 20% 30%,#5b3fa866,transparent 55%),radial-gradient(ellipse at 85% 70%,#0c6fa055,transparent 60%),#02030b}
 .live-cockpit .viewport[data-nav-mode=on] .road-map{background:transparent!important}
-.live-cockpit .viewport[data-nav-mode=on] .road-map .leaflet-tile-pane{opacity:1;mix-blend-mode:screen;filter:grayscale(1) invert(1) brightness(1.15) contrast(1.9) sepia(1) hue-rotate(165deg) saturate(4.5) brightness(1.25)}
 .live-cockpit .viewport[data-nav-mode=on] .space-nebula{opacity:.75}
 .live-cockpit .viewport[data-nav-mode=on] .space-stars{opacity:.9}
-.live-cockpit .road-map path[stroke="#4ee4ff"]{stroke:#5ff0ff;stroke-width:9px;filter:drop-shadow(0 0 4px #4ee4ff) drop-shadow(0 0 12px #2a8cff)}
 .live-cockpit .viewport[data-nav-mode=on] .navigation-strip{background:linear-gradient(90deg,#06121fef,#0a1c2ee6);border-bottom:1px solid #4ee4ff66;justify-content:flex-start}
 .live-cockpit .viewport[data-nav-mode=on] .navigation-strip>div:first-of-type{flex:1}
 .live-cockpit .viewport[data-nav-mode=on] .navigation-strip small,.live-cockpit .viewport[data-nav-mode=on] .navigation-strip [data-turn-distance]{display:none}
@@ -75,14 +60,29 @@ export const navLayoutCss = `
 .mole-hud>div{padding:5px 10px;text-align:center}
 .mole-hud>div+div{border-left:1px solid #4ee4ff55}
 .mole-hud b{display:block;font-size:20px;line-height:1.1;color:#fff}
-.mole-ship{position:absolute;left:0;top:0;width:48px;height:48px;margin:-24px 0 0 -24px;z-index:450;pointer-events:none;display:none;filter:drop-shadow(0 0 6px #7fe9ff) drop-shadow(0 2px 4px #000c)}
-.mole-ship svg{width:100%;height:100%;display:block}
-.mole-sky,.mole-orient{display:none}
-.live-cockpit .viewport[data-nav-mode=on] .road-map{inset:-90% -110% -120% -110%;transform:perspective(650px) rotateX(52deg) rotate(var(--map-rot,0deg));transform-origin:50% 50%;transition:transform .8s linear}
-.live-cockpit .viewport[data-nav-mode=on] .mole-sky{display:block;position:absolute;inset:0 0 auto;height:30%;z-index:440;pointer-events:none;background:radial-gradient(ellipse at 18% 30%,#7754c766,transparent 55%),radial-gradient(ellipse at 80% 10%,#2a6fb055,transparent 50%),linear-gradient(#02030f 0%,#030514f0 45%,#03051400 100%)}
-.live-cockpit .viewport[data-nav-mode=on] .mole-sky:before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,#fff 0 1px,transparent 1.5px),radial-gradient(circle,#9fdcff 0 1px,transparent 1.5px);background-size:97px 61px,151px 83px;background-position:13px 9px,61px 37px;opacity:.75}
-.live-cockpit .viewport[data-nav-mode=on] .mole-sky:after{content:"";position:absolute;right:9%;top:16%;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 30% 28%,#a6cfeb,#5766b3 40%,#302c67 70%,#080c21);box-shadow:-3px -2px 12px #7c9ce866;opacity:.85}
 .live-cockpit .viewport[data-nav-mode=on] .mole-orient{display:block;position:absolute;left:8px;top:8px;z-index:470;margin:0;min-height:44px;padding:6px 10px;font-size:11px;background:#07121ee6;border:1px solid #77e3de;border-radius:8px;color:#d9fbff}
+
+.live-cockpit .viewport[data-nav-mode=on]>.mole-map-credit{display:block;position:absolute;right:34%;bottom:25%;z-index:7;background:#030c1fe8;color:#def;font:10px system-ui;padding:2px 4px}
+/* One shared art coordinate system: the map is behind the glass, frame and console. */
+@media (orientation:portrait){
+.live-cockpit .viewport[data-nav-mode=on]{--tray-h:132px;--crew-h:0px}
+.live-cockpit .viewport[data-nav-mode=on] .live-navigation{inset:82px 0 calc(var(--tray-h) + 155px);border:0;border-radius:0;box-shadow:none;overflow:hidden;background:#020713}
+.live-cockpit .viewport[data-nav-mode=on] .mole-console{display:block;position:absolute;inset:82px 0 var(--tray-h);height:auto;z-index:4;background:none!important;pointer-events:none}
+.live-cockpit .viewport[data-nav-mode=on] .mole-console:before{content:"";position:absolute;inset:0 0 148px;background-image:var(--mole-frame-art);background-size:100% 200%;background-position:top;mask-image:${navFrameMask};mask-size:100% 200%;mask-repeat:no-repeat;mask-position:top;-webkit-mask-image:${navFrameMask};-webkit-mask-size:100% 200%;-webkit-mask-position:top}
+.live-cockpit .viewport[data-nav-mode=on] .mole-console:after{content:"";position:absolute;inset:auto 0 0;height:148px;background-image:var(--mole-frame-art);background-size:100% 200%;background-position:bottom;mask-image:${navFrameMask};mask-size:100% 200%;mask-position:bottom;mask-repeat:no-repeat}
+.live-cockpit .viewport[data-nav-mode=on] .mole-console .mole-captain{left:-4%;bottom:0;height:47%;max-width:49%;z-index:1}
+.live-cockpit .viewport[data-nav-mode=on] .mole-dash{z-index:2;background:#020c18d9;border:1px solid #6dbfe966;border-radius:3px;min-height:35px}
+.live-cockpit .viewport[data-nav-mode=on] .mole-dash b{font-size:18px}
+.live-cockpit .viewport[data-nav-mode=on] .mole-dash small{font-size:10px}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard{z-index:8;inset:auto 2% 4px;max-height:128px}
+.live-cockpit .viewport[data-nav-mode=on] .mole-orient{left:24%;top:80px;z-index:6}
+.live-cockpit .viewport[data-nav-mode=on] .mole-map-zoom{top:78px;right:12px}
+.live-cockpit .viewport[data-nav-mode=on] .mole-map-credit{display:block;position:absolute;z-index:7;left:auto;right:3px;bottom:var(--tray-h);background:#030c1fe8;padding:2px 4px;color:#def;text-align:right;font-size:10px}
+.live-cockpit .viewport[data-nav-mode=on] .map-status{bottom:6px;font-size:10px;pointer-events:none}
+}
+.live-cockpit .viewport[data-nav-mode=on] .road-map{inset:0;transform:none}
+.live-cockpit .viewport[data-nav-mode=on] .live-navigation:before{display:none}
+.live-cockpit .viewport[data-nav-mode=on] .mole-orient{display:block;position:absolute;min-height:44px;margin:0;padding:6px 10px;background:#07121ee6;border:1px solid #77e3de;border-radius:6px;color:#eff;font-size:12px}
 .mole-dash2 .mole-bar{display:block;width:70%;height:4px;margin:3px auto 0;background:#0b1f2c;border-radius:2px;overflow:hidden}
 .mole-dash2 .mole-bar s{display:block;height:100%;width:100%;background:#5ff0ff;box-shadow:0 0 6px currentColor}
 .mole-dash2{background:#030a12b8;border-radius:6px}
@@ -116,49 +116,14 @@ export const navLayoutScript = `(function(){
  }
  function resize(){try{window.dispatchEvent(new Event('resize'));}catch(e){}}
 
- // --- windscreen: tilted map, heading-up / north-up, ship marker (1.0.15) ---
- var SHIP='<svg viewBox="-24 -24 48 48" aria-hidden="true"><defs><linearGradient id="mole-trail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ff0ff" stop-opacity=".9"/><stop offset="1" stop-color="#5ff0ff" stop-opacity="0"/></linearGradient></defs><path d="M-7 6L0 3L7 6L5 24L-5 24Z" fill="url(#mole-trail)"/><path d="M0 -18L13 10L0 4L-13 10Z" fill="#ffffff" stroke="#bafaff" stroke-width="1.2" stroke-linejoin="round"/></svg>';
- var heading=null,last=null,rot=0,northUp=false;
- try{northUp=localStorage.getItem('mole-beyond:map-orient')==='north';}catch(e){}
- function metres(a,b){var k=Math.PI/180,x=(b.lng-a.lng)*k*Math.cos((a.lat+b.lat)*k/2),y=(b.lat-a.lat)*k;return Math.sqrt(x*x+y*y)*6371000;}
- function bearing(a,b){var k=Math.PI/180,y=Math.sin((b.lng-a.lng)*k)*Math.cos(b.lat*k),x=Math.cos(a.lat*k)*Math.sin(b.lat*k)-Math.sin(a.lat*k)*Math.cos(b.lat*k)*Math.cos((b.lng-a.lng)*k);return (Math.atan2(y,x)/k+360)%360;}
- function tap(f){
-  if(!f||!isFinite(f.lat)||!isFinite(f.lng))return;
-  if(f.heading!=null&&isFinite(f.heading)&&f.speed>1.2){heading=f.heading;last=f;return;}
-  if(!last){last=f;return;}
-  if(metres(last,f)>=6){heading=bearing(last,f);last=f;}
- }
- window.__moleTapFix=tap;
- function hookGps(){var R=window.RedAlertNative;if(!R||R.__moleTap||typeof R.watchPosition!=='function')return;var o=R.watchPosition;R.watchPosition=function(onFix,onErr){return o.call(R,function(f){try{tap(f);}catch(e){}return onFix.apply(this,arguments);},onErr);};R.__moleTap=1;}
- hookGps();var hookTries=0,hookTimer=setInterval(function(){hookGps();if(++hookTries>40)clearInterval(hookTimer);},250);
+ // Orientation belongs to the map camera, not a transformed DOM surface.
  function windscreen(){
-  var nav=document.querySelector('.live-cockpit .live-navigation');if(!nav||nav.__moleWs)return;
-  var map=nav.querySelector('.road-map');if(!map)return;nav.__moleWs=1;
-  var view=nav.closest('.viewport');
-  var sky=document.createElement('div');sky.className='mole-sky';nav.appendChild(sky);
-  var ship=document.createElement('div');ship.className='mole-ship';ship.innerHTML=SHIP;nav.appendChild(ship);
+  var nav=document.querySelector('.live-cockpit .live-navigation');if(!nav||nav.__moleWs)return;nav.__moleWs=1;
+  var northUp=false;try{northUp=localStorage.getItem('mole-beyond:map-orient')==='north';}catch(e){}
   var btn=document.createElement('button');btn.type='button';btn.className='mole-orient';
   function label(){btn.textContent=northUp?'North up':'Heading up';btn.setAttribute('aria-label',northUp?'Map is north up. Switch to heading up':'Map turns with heading. Switch to north up');}
-  label();btn.onclick=function(){northUp=!northUp;try{localStorage.setItem('mole-beyond:map-orient',northUp?'north':'heading');}catch(e){}label();};
-  nav.appendChild(btn);
-  var moved=false;
-  function frame(){
-   if(!nav.isConnected)return;
-   if(!moved){var cc=map.querySelector('.leaflet-control-container');if(cc){nav.appendChild(cc);moved=true;}}
-   var on=view&&view.dataset.navMode==='on';
-   var target=on&&!northUp&&heading!=null?-heading:0;
-   var d=((target-rot)%360+540)%360-180;if(Math.abs(d)>0.5){rot+=d;map.style.setProperty('--map-rot',rot.toFixed(1)+'deg');}
-   var dot=map.querySelector('path[fill="#23cfee"]');
-   if(dot){var r=dot.getBoundingClientRect(),n=nav.getBoundingClientRect();
-    if(r.width>0){var x=r.left+r.width/2-n.left,y=r.top+r.height/2-n.top;
-     var a=heading==null?0:(on&&!northUp?0:heading);
-     ship.style.display='block';ship.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px) rotate('+a.toFixed(1)+'deg)';
-     ship.style.opacity=dot.getAttribute('fill-opacity')==='1'?'1':'.5';}
-    else ship.style.display='none';}
-   else ship.style.display='none';
-   placeDash();requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
+  label();btn.onclick=function(){northUp=!northUp;try{localStorage.setItem('mole-beyond:map-orient',northUp?'north':'heading');}catch(e){}label();window.dispatchEvent(new Event('mole-map-orientation'));};nav.appendChild(btn);
+  var view=nav.closest('.viewport'),credit=nav.querySelector('.mole-map-credit');if(view&&credit)view.appendChild(credit);
  }
 
  var classifyTurn=(0,eval)('('+${JSON.stringify(classifyTurnSource)}+')');
@@ -215,8 +180,6 @@ export const navLayoutScript = `(function(){
    '.live-cockpit .viewport[data-nav-mode=on] .cockpit-art{background:#05070b}'+
    '.live-cockpit .viewport[data-nav-mode=on] .full-crew{display:none}'+
    '.mole-console{display:none}'+
-   '@media (orientation:portrait){.live-cockpit .viewport[data-nav-mode=on]{--crew-h:118px}'+
-   '.live-cockpit .viewport[data-nav-mode=on] .mole-console{display:block;position:absolute;left:0;right:0;bottom:0;height:calc(var(--tray-h) + var(--crew-h) + 12px);z-index:4;background:'+pl+' 50% 92%/auto 150% no-repeat;pointer-events:none}}'+
    '.mole-dash{display:none}'+
    '@media (orientation:portrait){.live-cockpit .viewport[data-nav-mode=on] .mole-dash{display:flex;position:absolute;align-items:center;justify-content:space-around;color:#fff;font:600 10px system-ui,sans-serif;text-align:center;text-shadow:0 0 6px #4ee4ff}'+
    '.live-cockpit .viewport[data-nav-mode=on] .mole-dash b{display:block;font-size:17px;line-height:1}.live-cockpit .viewport[data-nav-mode=on] .mole-dash small{color:#9fdfe8;font-size:9px}'+
@@ -235,16 +198,16 @@ export const navLayoutScript = `(function(){
    '@keyframes mole-streaks{0%,45%{transform:scale(.2);opacity:0}to{transform:scale(2.4);opacity:.9}}'+
    '@media(prefers-reduced-motion:reduce){.launch-scene .launch-art,.launch-scene .launch-streaks,.launch-scene .mole-captain{animation:none}}';
   document.head.appendChild(st);
+  document.documentElement.style.setProperty('--mole-frame-art',pl);
  }
 
- // Live readouts sit on the console screen that the artwork leaves blank (image px 982-1198 x 528-610 of 1672x941).
+ // Live readout uses the blank console screen in the 1280 x 720 navigation art.
  var dashSize='';
  function placeDash(){
   var con=document.querySelector('.live-cockpit .mole-console'),dash=con&&con.querySelector('.mole-dash:not(.mole-dash2)');if(!dash)return;
-  var H=con.offsetHeight,vw=con.offsetWidth,key=H+'x'+vw;if(!H||key===dashSize)return;dashSize=key;
-  var k=1.5*H/941,x0=(vw-1672*k)*0.5,y0=(H-1.5*H)*0.92;
-  dash.style.left=(x0+986*k).toFixed(1)+'px';dash.style.top=(y0+530*k).toFixed(1)+'px';dash.style.width=(208*k).toFixed(1)+'px';dash.style.height=(78*k).toFixed(1)+'px';
-  var d2=con.querySelector('.mole-dash2');if(d2){d2.style.left=(x0+618*k).toFixed(1)+'px';d2.style.top=(y0+496*k).toFixed(1)+'px';d2.style.width=(350*k).toFixed(1)+'px';d2.style.height=(98*k).toFixed(1)+'px';}
+  var H=con.offsetHeight,W=con.offsetWidth,key=H+'x'+W;if(!H||key===dashSize)return;dashSize=key;
+  dash.style.left=(W*0.595).toFixed(1)+'px';dash.style.top=(H-148+(0.57-0.5)*296).toFixed(1)+'px';dash.style.width=(W*0.22).toFixed(1)+'px';dash.style.height='38px';
+  var d2=con.querySelector('.mole-dash2');if(d2){d2.style.left=(W*0.345).toFixed(1)+'px';d2.style.top=dash.style.top;d2.style.width=(W*0.235).toFixed(1)+'px';d2.style.height='38px';}
  }
  window.addEventListener('resize',function(){dashSize='';setTimeout(placeDash,60);});
  function seats(){
