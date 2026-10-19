@@ -23,7 +23,7 @@ export function createCosmicNavigation({maplibre,container,window:w=window,onSta
  let tileError=false,latest,ready=false,disposed=false,following=true,lastPhase,heading=0,lastFix,hasMarker=false,hasDestination=false,lastRoute,resumeTimer=null;
  const isNorth=()=>{try{return w.localStorage.getItem('mole-beyond:map-orient')==='north';}catch{return false;}};
  // The ship stays put near the bottom of the windscreen, pointing straight ahead; the map moves and turns under it.
- function camera(s,instant=false){if(!s?.fix||s.planning||!following)return;const h=container.clientHeight||600,kmh=Number.isFinite(s.fix.speed)?s.fix.speed*3.6:0,zoom=kmh>80?15.6:kmh>50?16.1:16.6;const view={center:[s.fix.lng,s.fix.lat],zoom,pitch:57,bearing:isNorth()?0:heading,padding:{top:Math.round(h*.52),bottom:Math.round(h*.06),left:0,right:0}};if(instant||!ready)map.jumpTo(view);else map.easeTo({...view,duration:950,easing:t=>t,essential:true});}
+ function camera(s,instant=false){if(!s?.fix||s.planning||!following)return;const h=container.clientHeight||600,kmh=Number.isFinite(s.fix.speed)?s.fix.speed*3.6:0,zoom=kmh>80?15.6:kmh>50?16.1:16.6;const view={center:[s.fix.lng,s.fix.lat],zoom,pitch:57,bearing:isNorth()?0:heading,padding:{top:Math.round(h*.64),bottom:Math.round(h*.02),left:0,right:0}};if(instant||!ready)map.jumpTo(view);else map.easeTo({...view,duration:950,easing:t=>t,essential:true});}
  function update(s){
   latest=s;if(disposed||!ready)return;
   if(s.journey?.phase==='navigating'&&lastPhase!=='navigating')following=true;lastPhase=s.journey?.phase;

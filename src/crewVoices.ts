@@ -60,7 +60,11 @@ export function assignCrewVoices(voices: readonly DeviceVoice[] | null | undefin
     const fresh = english.filter(v => !used.has(v.identifier));
     const chosen = pick(fresh.length ? fresh : english);
     if (chosen) used.add(chosen.identifier);
-    out[character] = {voice: chosen?.identifier, language: chosen ? (chosen.language || 'en-AU') : 'en-AU', pitch: p.pitch, rate: p.rate};
+    // If the phone does not say the voice's gender (or we had to settle for the other one), lean on pitch
+    // so the character still reads as male or female.
+    const g = chosen ? voiceGender(chosen) : null;
+    const pitch = g === p.gender ? p.pitch : p.gender === 'male' ? Math.min(p.pitch, 0.72) : Math.max(p.pitch, 1.2);
+    out[character] = {voice: chosen?.identifier, language: chosen ? (chosen.language || 'en-AU') : 'en-AU', pitch, rate: p.rate};
   }
   return out;
 }

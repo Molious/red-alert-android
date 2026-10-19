@@ -337,20 +337,31 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   useEffect(() => {
     alive.current = true;
     // This prototype is foreground-only: location, microphone and speech stop together.
+    // Android briefly reports the app as not active when the speech recogniser grabs the mic. Treating
+    // that as "app in background" stopped GPS and navigation every time the mic opened (the map stopped
+    // following and the route had to be recalculated). Now: ignore it while the mic is listening, and
+    // only treat the app as backgrounded if it stays away for 2 seconds.
+    let away: ReturnType<typeof setTimeout> | null = null, backgrounded = false;
+    const goBackground=()=>{away=null;backgrounded=true;const preparing=preparation.current?.pending();active.current=false;
+      if(!preparing)web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-background')); true;");
+      cancelVoice();stopSpeech();clearAllWatches();setAwake(false);};
     const sub = AppState.addEventListener('change', (s) => {
-      console.info('APPSTATE',s);const preparing=preparation.current?.pending();
-      active.current = s === 'active';
-      if (!active.current) {
-        if(!preparing)web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-background')); true;");
-        cancelVoice();
-        stopSpeech();
-        clearAllWatches();
-        setAwake(false);
-      }else{if(preparing)preparation.current?.foreground();else web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-foreground')); true;");}
+      console.info('APPSTATE',s);
+      if (s === 'active') {
+        if (away) { clearTimeout(away); away = null; }
+        if (!backgrounded) return;
+        backgrounded = false; active.current = true;
+        const preparing=preparation.current?.pending();
+        if(preparing)preparation.current?.foreground();else web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-foreground')); true;");
+        return;
+      }
+      if (capture.current || away || backgrounded) return;
+      away = setTimeout(goBackground, 2000);
     });
     return () => {
       alive.current = false;
       reset();
+      if (away) clearTimeout(away);
       sub.remove();
     };
   }, []);
