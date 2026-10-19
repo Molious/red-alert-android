@@ -11,6 +11,7 @@ import {createRecognitionGate} from './recognitionGate';
 import {createSessionPreparation} from './sessionPreparation';
 import {createSpeechSession,waitForCaptureSpeech,createAudioSwitch} from './speechSession';
 import { pickLanguage, pickRecognitionService, MAX_LISTEN_MS } from './voicePolicy';
+import {assignCrewVoices,crewVoiceFor,type CrewVoice,type DeviceVoice} from './crewVoices';
 
 // The native side of window.RedAlertNative: voice commands, SEXTANT's voice and GPS.
 //
@@ -203,10 +204,16 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     if (alive.current) setPhase('off');
   });
 
+  // Each crew member gets their own installed voice (see crewVoices.ts), worked out once per session.
+  const crewVoices=useRef<Record<string,CrewVoice>|null>(null);
+  const loadCrewVoices=async()=>{try{const v=await Speech.getAvailableVoicesAsync();crewVoices.current=assignCrewVoices(v as DeviceVoice[]);return v;}catch{return [];}};
   // Request-correlated speech: an old Android completion cannot finish a newer line.
   const speechSession = useRef<ReturnType<typeof createSpeechSession> | null>(null);
   if(!speechSession.current)speechSession.current=createSpeechSession({
-    speak:(text,callbacks,voice)=>Speech.speak(text,{language:'en-AU',rate:voice.rate??.98,pitch:voice.pitch??.85,...callbacks}),
+    speak:(text,callbacks,voice)=>{const cv=crewVoiceFor(crewVoices.current,voice.character);const base={language:cv.language,rate:voice.rate??cv.rate,pitch:voice.pitch??cv.pitch};
+      // A chosen voice can fail (e.g. not downloaded); fall back to the default voice rather than going silent.
+      if(!cv.voice){Speech.speak(text,{...base,...callbacks});return;}
+      Speech.speak(text,{...base,voice:cv.voice,onDone:callbacks.onDone,onStopped:callbacks.onStopped,onError:()=>Speech.speak(text,{...base,...callbacks})});},
     stop:()=>Speech.stop(),send:(r,outcome)=>send(r,'speech.end',{outcome})
   });
   const stopSpeech = (id=0) => { speechSession.current?.cancel(id); };
@@ -216,7 +223,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   if(!audioSwitch.current)audioSwitch.current=createAudioSwitch({stop:()=>stopSpeech(),changed:setAudioMuted,notify:value=>web.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('hybrid-audio',{detail:{muted:${value}}})); true;`)});
   const setAudioPaused=(value:boolean)=>audioSwitch.current?.set(value);
   const preparation=useRef<ReturnType<typeof createSessionPreparation>|null>(null);
-  if(!preparation.current)preparation.current=createSessionPreparation({permission:()=>Location.requestForegroundPermissionsAsync(),microphone:()=>Recognition.requestPermissionsAsync(),voices:()=>Speech.getAvailableVoicesAsync(),isActive:()=>active.current,isCurrent:r=>alive.current&&document.current===r.doc,send:(r,result)=>send(r,'session.ready',result)});
+  if(!preparation.current)preparation.current=createSessionPreparation({permission:()=>Location.requestForegroundPermissionsAsync(),microphone:()=>Recognition.requestPermissionsAsync(),voices:()=>loadCrewVoices(),isActive:()=>active.current,isCurrent:r=>alive.current&&document.current===r.doc,send:(r,result)=>send(r,'session.ready',result)});
 
   // ---------- GPS ----------
   const clearWatch = (id: number) => {

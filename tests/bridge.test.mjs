@@ -146,5 +146,7 @@ test('newer session, journey, audio and search messages are accepted alongside p
   let voice;
   const session = createSpeechSession({ speak: (_t, _c, v) => { voice = v; }, stop: () => {}, send: () => {} });
   await session.say({ id: 1, doc: 'document1', text: 'Lock on?', pitch: 1.3, rate: 0.9 });
-  assert.deepEqual(voice, { pitch: 1.3, rate: 0.9 });
+  assert.deepEqual(voice, { pitch: 1.3, rate: 0.9, character: undefined });
+  await session.say({ id: 2, doc: 'document1', text: 'Weapons hot', character: 'VEX' });
+  assert.equal(voice.character, 'VEX');
 });

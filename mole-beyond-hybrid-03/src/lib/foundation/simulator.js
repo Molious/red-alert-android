@@ -13,7 +13,7 @@ const native=()=>window.RedAlertNative;
 function play(item,signal){view?.caption(item);if(signal.aborted)return Promise.resolve();stopMic(true);speechPlaying++;return new Promise(resolve=>{
  let timer,id,utterance,settled=false;const done=outcome=>{if(settled)return;settled=true;clearTimeout(timer);signal.removeEventListener('abort',cancel);speechPlaying=Math.max(0,speechPlaying-1);if(outcome==='failed')view?.listening('Device speech unavailable. Check the installed speech service.');scheduleMic();resolve();};
  const cancel=()=>{if(id!==undefined)native()?.cancelSpeech?.(id);if(utterance)window.speechSynthesis?.cancel();done();};signal.addEventListener('abort',cancel,{once:true});timer=setTimeout(cancel,20000);
- if(native()?.speakRequest)id=native().speakRequest(item.text,done);
+ if(native()?.speakRequest)id=native().speakRequest(item.text,done,{character:item.character});
  else if(window.speechSynthesis&&window.SpeechSynthesisUtterance){utterance=new SpeechSynthesisUtterance(item.text);utterance.lang='en-AU';utterance.rate=.98;utterance.pitch=item.character==='VEX'?.8:item.character==='WRAITH'?.95:1;utterance.onend=done;utterance.onerror=done;window.speechSynthesis.speak(utterance);}else done();
  });}
 const audio=createDialogueQueue({play});

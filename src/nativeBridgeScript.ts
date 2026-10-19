@@ -27,6 +27,7 @@ export const nativeBridgeScript = `
     var extra = { text: String(text).slice(0, 2000) };
     if (opts && typeof opts.pitch === 'number') extra.pitch = opts.pitch;
     if (opts && typeof opts.rate === 'number') extra.rate = opts.rate;
+    if (opts && typeof opts.character === 'string' && /^[A-Z]{2,12}$/.test(opts.character)) extra.character = opts.character;
     return extra;
   }
   function emit(name) {
