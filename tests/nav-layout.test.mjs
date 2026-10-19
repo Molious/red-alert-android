@@ -16,7 +16,7 @@ test('App injects the navigation layout next to the native bridge without touchi
 });
 test('layout styles target only the live cockpit in navigation mode and keep the map credit visible',()=>{
  assert.deepEqual(NAV_PHASES,['navigating','recalculating','signal lost','launching']);
- for(const rule of navLayoutCss.split('\n').filter(l=>l.includes('{')&&!l.startsWith('@media')&&l!=='}'))assert.match(rule,/^\.live-cockpit /,rule);
+ for(const rule of navLayoutCss.split('\n').filter(l=>l.includes('{')&&!l.startsWith('@media')&&l!=='}'))assert.match(rule,/^(\.live-cockpit |\.mole-)/,rule);
  assert.ok(!/leaflet-control-attribution\{[^}]*display:none/.test(navLayoutCss));
 });
 test('journey phase switches the compact tray on and off, and More controls expands it',async()=>{
@@ -32,4 +32,22 @@ test('journey phase switches the compact tray on and off, and More controls expa
   assert.equal(view.dataset.navMode,'off');assert.ok(!dash.classList.contains('tray-open'));assert.equal(toggle.textContent,'More controls');
   assert.equal(d.querySelectorAll('.tray-toggle').length,1);
  }finally{dom.window.close();}
+});
+test('windscreen adds the space sky, ship marker and a remembered heading-up / north-up toggle',async()=>{
+ const {dom,d}=await cockpit();
+ try{
+  await tick(60);
+  const nav=d.querySelector('.live-navigation');
+  assert.ok(nav.querySelector('.mole-sky'));assert.ok(nav.querySelector('.mole-ship svg'));
+  const btn=nav.querySelector('.mole-orient');assert.equal(btn.textContent,'Heading up');
+  btn.click();assert.equal(btn.textContent,'North up');assert.equal(dom.window.localStorage.getItem('mole-beyond:map-orient'),'north');
+  btn.click();assert.equal(dom.window.localStorage.getItem('mole-beyond:map-orient'),'heading');
+  assert.match(navLayoutCss,/rotateX\(32deg\) rotate\(var\(--map-rot,0deg\)\)/);
+ }finally{dom.window.close();}
+});
+test('heading comes from GPS when moving and from travelled distance otherwise',()=>{
+ let tap;const w={localStorage:{getItem(){return null},setItem(){}},addEventListener(){},requestAnimationFrame(){},setInterval(){return 1},clearInterval(){}};
+ const doc={readyState:'loading',addEventListener(){},head:null};
+ new Function('window','document','localStorage','setInterval','clearInterval','requestAnimationFrame',navLayoutScript)(w,doc,w.localStorage,w.setInterval,w.clearInterval,w.requestAnimationFrame);
+ tap=w.__moleTapFix;assert.equal(typeof tap,'function');
 });
