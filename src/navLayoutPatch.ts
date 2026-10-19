@@ -39,8 +39,7 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .road-status:not(.mole-alert),
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .voice-status,
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .navigation-planner,
-.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:is([data-action=destination],[data-action=launch],[data-action=mute],[data-action=unmute],[data-action=pause-story],[data-action=save],[data-action=home]){display:none}
-.live-cockpit .viewport[data-nav-mode=on] .flight-actions button[data-action=voice]{display:none}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:is([data-action=destination],[data-action=launch],[data-action=home]){display:none}
 .live-cockpit .viewport[data-nav-mode=on] .flight-actions button:is([data-action=launch],[data-action=home]):disabled{display:none}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions{flex-wrap:nowrap}
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button{flex:1 1 0;min-width:0;padding:6px 4px;font-size:11px;line-height:1.2}
@@ -84,6 +83,28 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-nav-mode=on] .mole-sky:before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,#fff 0 1px,transparent 1.5px),radial-gradient(circle,#9fdcff 0 1px,transparent 1.5px);background-size:97px 61px,151px 83px;background-position:13px 9px,61px 37px;opacity:.75}
 .live-cockpit .viewport[data-nav-mode=on] .mole-sky:after{content:"";position:absolute;right:9%;top:16%;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 30% 28%,#a6cfeb,#5766b3 40%,#302c67 70%,#080c21);box-shadow:-3px -2px 12px #7c9ce866;opacity:.85}
 .live-cockpit .viewport[data-nav-mode=on] .mole-orient{display:block;position:absolute;left:8px;top:8px;z-index:470;margin:0;min-height:44px;padding:6px 10px;font-size:11px;background:#07121ee6;border:1px solid #77e3de;border-radius:8px;color:#d9fbff}
+.mole-dash2 .mole-bar{display:block;width:70%;height:4px;margin:3px auto 0;background:#0b1f2c;border-radius:2px;overflow:hidden}
+.mole-dash2 .mole-bar s{display:block;height:100%;width:100%;background:#5ff0ff;box-shadow:0 0 6px currentColor}
+.mole-dash2{background:#030a12b8;border-radius:6px}
+/* 1.0.20: controls built into the console - no boxed panel in navigation mode */
+@media (orientation:portrait){
+.live-cockpit .viewport[data-nav-mode=on]{--tray-h:150px}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open){background:none;border:0;box-shadow:none;border-radius:0;inset:auto 0 0;padding:0 10px 8px;max-height:none;overflow:visible}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .crew-comms{background:linear-gradient(90deg,#04101ce0,#04101c80 70%,#04101c00);border-left:2px solid #c4a3ec;border-radius:0 6px 6px 0;margin:0 0 6px;text-shadow:0 0 6px #4ee4ff66}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .road-status.mole-alert{background:#1a0e04d9;border-radius:0 6px 6px 0}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button{font-size:0;min-height:44px;padding:0 2px;margin:0;border-radius:7px;color:#bff6ff;background:linear-gradient(#122231f5,#070d16f5);border:1px solid #2e4b5c;box-shadow:inset 0 1px 0 #ffffff1a,inset 0 -3px 0 #ff9a3c40,0 3px 8px #000b;position:relative;display:flex;align-items:center;justify-content:center;gap:5px}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button[hidden]{display:none}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button::after{content:attr(data-key);font:600 10px/1.15 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-align:center;text-shadow:0 0 6px #4ee4ff99;white-space:pre-line}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button::before{content:"";width:6px;height:6px;border-radius:50%;background:#24404d;box-shadow:inset 0 0 2px #000;flex:0 0 6px}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:is([data-action=unmute],[data-action=resume-story])::before{background:#ffb35c;box-shadow:0 0 6px #ff9a3c}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button[data-action=cancel]{color:#ffc9c9;border-color:#6a3440}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button.tray-toggle{border-color:#4ee4ff88;color:#dffbff}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:active{transform:translateY(1px);box-shadow:inset 0 1px 0 #ffffff10,inset 0 -1px 0 #ff9a3c80,0 1px 3px #000b}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard:not(.tray-open) .flight-actions button:disabled{opacity:.45}
+.live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard.tray-open{inset:auto 2% 4px}
+.live-cockpit .viewport[data-nav-mode=on] .navigation-strip .nav-voice button{display:none}
+}
 `;
 
 export const navLayoutScript = `(function(){
@@ -164,9 +185,9 @@ export const navLayoutScript = `(function(){
    var t=dist&&dist.textContent||'',m=/(\\d+) m to next/.exec(t),r=/([\\d.]+) km remaining/.exec(t);
    big.textContent=m?(+m[1]>=1000?(m[1]/1000).toFixed(1)+' km':m[1]+' m'):'';
    document.querySelectorAll('[data-mole-left]').forEach(function(e){e.textContent=r?r[1]:'—';});
-   var sp=document.querySelector('.cockpit-dashboard [data-speed]'),sv=sp&&/^\\d+$/.test(sp.textContent.trim())?sp.textContent.trim():'0';document.querySelectorAll('[data-mole-speed]').forEach(function(e){e.textContent=sv;});
+   var sp=document.querySelector('.cockpit-dashboard [data-speed]'),sv=sp&&/^\\d+$/.test(sp.textContent.trim())?sp.textContent.trim():'0';document.querySelectorAll('[data-mole-speed]').forEach(function(e){e.textContent=sv;});var sh=document.querySelector('.cockpit-dashboard [data-shields]'),cr=document.querySelector('.cockpit-dashboard [data-credits]'),shv=sh?sh.textContent.trim():'100%';document.querySelectorAll('[data-mole-shields]').forEach(function(e){e.textContent=shv;});document.querySelectorAll('[data-mole-shield-bar]').forEach(function(e){var n=parseInt(shv,10);e.style.width=(isFinite(n)?Math.max(0,Math.min(100,n)):100)+'%';e.style.background=n<35?'#ff6a5c':n<70?'#ffb35c':'#5ff0ff';});document.querySelectorAll('[data-mole-credits]').forEach(function(e){e.textContent=cr?cr.textContent.trim():'0';});
   }
-  var mo=new MutationObserver(upd);[next,dist,document.querySelector('.cockpit-dashboard [data-speed]')].forEach(function(e){if(e)mo.observe(e,{childList:true,characterData:true,subtree:true});});
+  var mo=new MutationObserver(upd);[next,dist,document.querySelector('.cockpit-dashboard [data-speed]'),document.querySelector('.cockpit-dashboard [data-shields]'),document.querySelector('.cockpit-dashboard [data-credits]')].forEach(function(e){if(e)mo.observe(e,{childList:true,characterData:true,subtree:true});});
   upd();
  }
 
@@ -219,15 +240,16 @@ export const navLayoutScript = `(function(){
  // Live readouts sit on the console screen that the artwork leaves blank (image px 982-1198 x 528-610 of 1672x941).
  var dashSize='';
  function placeDash(){
-  var con=document.querySelector('.live-cockpit .mole-console'),dash=con&&con.querySelector('.mole-dash');if(!dash)return;
+  var con=document.querySelector('.live-cockpit .mole-console'),dash=con&&con.querySelector('.mole-dash:not(.mole-dash2)');if(!dash)return;
   var H=con.offsetHeight,vw=con.offsetWidth,key=H+'x'+vw;if(!H||key===dashSize)return;dashSize=key;
   var k=1.5*H/941,x0=(vw-1672*k)*0.5,y0=(H-1.5*H)*0.92;
   dash.style.left=(x0+986*k).toFixed(1)+'px';dash.style.top=(y0+530*k).toFixed(1)+'px';dash.style.width=(208*k).toFixed(1)+'px';dash.style.height=(78*k).toFixed(1)+'px';
+  var d2=con.querySelector('.mole-dash2');if(d2){d2.style.left=(x0+618*k).toFixed(1)+'px';d2.style.top=(y0+496*k).toFixed(1)+'px';d2.style.width=(350*k).toFixed(1)+'px';d2.style.height=(98*k).toFixed(1)+'px';}
  }
  window.addEventListener('resize',function(){dashSize='';setTimeout(placeDash,60);});
  function seats(){
   var view=document.querySelector('.live-cockpit .viewport');
-  if(view&&!view.querySelector('.mole-console')){var con=document.createElement('div');con.className='mole-console';var dash=document.createElement('div');dash.className='mole-dash';dash.innerHTML='<div><b data-mole-speed>0</b><small>km/h</small></div><div><b data-mole-left>—</b><small>km left</small></div>';con.appendChild(dash);var g=captainEl('seat');if(g)con.appendChild(g);view.appendChild(con);}
+  if(view&&!view.querySelector('.mole-console')){var con=document.createElement('div');con.className='mole-console';var dash=document.createElement('div');dash.className='mole-dash';dash.innerHTML='<div><b data-mole-speed>0</b><small>km/h</small></div><div><b data-mole-left>—</b><small>km left</small></div>';con.appendChild(dash);var dash2=document.createElement('div');dash2.className='mole-dash mole-dash2';dash2.innerHTML='<div><b data-mole-shields>100%</b><small>shields</small><i class="mole-bar"><s data-mole-shield-bar></s></i></div><div><b data-mole-credits>0</b><small>credits</small></div>';con.appendChild(dash2);var g=captainEl('seat');if(g)con.appendChild(g);view.appendChild(con);}
   placeDash();
   var con2=view&&view.querySelector('.mole-console'),cur=con2&&con2.querySelector('.mole-captain');
   if(con2&&cur&&cur.dataset.captain!==captainKey()){var ng=captainEl('seat');if(ng)con2.replaceChild(ng,cur);}
@@ -268,11 +290,15 @@ export const navLayoutScript = `(function(){
  function wire(){
   var dash=document.querySelector('.cockpit-dashboard');if(!dash||dash.__moleNav)return;dash.__moleNav=1;
   var view=dash.closest('.viewport');var phase=dash.querySelector('[data-phase]');var actions=dash.querySelector('.flight-actions');
+  var KEYS={repeat:'REPEAT',recenter:'RECENTRE',mute:'MUTE',unmute:'SOUND\\nOFF',"pause-story":'STORY',"resume-story":'STORY\\nPAUSED',save:'SAVE',cancel:'ABORT',resume:'RESUME',retry:'RETRY\\nROUTE',destination:'DEST',launch:'LAUNCH',home:'CREW',voice:'MIC',delegate:'CREW\\nHANDLE'};
+  function keyLabels(){if(!actions)return;actions.querySelectorAll('button').forEach(function(b){var k=b.classList.contains('tray-toggle')?(dash.classList.contains('tray-open')?'CLOSE':'MENU'):(b.dataset.action==='resume'&&/start gps/i.test(b.textContent||'')?'START\\nGPS':KEYS[b.dataset.action]);if(k&&b.getAttribute('data-key')!==k)b.setAttribute('data-key',k);});}
+  if(actions)new MutationObserver(keyLabels).observe(actions,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-action']});
   if(actions&&!actions.querySelector('.tray-toggle')){
    var t=document.createElement('button');t.type='button';t.className='tray-toggle';t.textContent='More controls';t.setAttribute('aria-expanded','false');
-   t.onclick=function(){var open=!dash.classList.contains('tray-open');dash.classList.toggle('tray-open',open);t.textContent=open?'Fewer controls':'More controls';t.setAttribute('aria-expanded',String(open));};
+   t.onclick=function(){var open=!dash.classList.contains('tray-open');dash.classList.toggle('tray-open',open);t.textContent=open?'Fewer controls':'More controls';t.setAttribute('aria-expanded',String(open));keyLabels();};
    actions.appendChild(t);
   }
+  keyLabels();
   function sync(){
    var p=(phase&&phase.textContent||'').trim().toLowerCase();var on=PHASES.indexOf(p)>=0;
    var want=on?'on':'off';if(view&&view.dataset.navMode!==want){var was=view.dataset.navMode;view.dataset.navMode=want;if(!was&&!on)return;if(!on){dash.classList.remove('tray-open');var b=dash.querySelector('.tray-toggle');if(b){b.textContent='More controls';b.setAttribute('aria-expanded','false');}}setTimeout(resize,50);}
