@@ -82,7 +82,7 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
    if(!guide||!j||finished(j)||j.phase==='route_ready'||j.phase==='launching'){emit();return;}
    if(j.phase==='signal_lost'&&!busy)dispatch('live.phase',{phase:'navigating'});
    const g=guide.update(p,now());viewGuidance=g;
-   if(!g.valid){audio.holdStory?.(true);if(g.offRoute&&!busy&&now()-lastRecalc>=8000){lastRecalc=now();say('You are off the planned route. Recalculating.');void loadRoute(true);}else{status='Position does not match the route. Waiting for a reliable fix.';}emit();return;}
+   if(!g.valid&&!g.arrived){audio.holdStory?.(true);if(g.offRoute&&!busy&&now()-lastRecalc>=8000){lastRecalc=now();say('You are off the planned route. Recalculating.');void loadRoute(true);}else{status='Position does not match the route. Waiting for a reliable fix.';}emit();return;}
    if(busy){emit();return;}
    if(journey().phase!=='navigating'){emit();return;}
    if(state().story?.prologueV!==2&&!g.turnSoon&&!storyPaused){speakScene(PROLOGUE,'prologue:'+now());storyFlag({prologue:true});chatterGap=150000;lastSpokeAt=now();}

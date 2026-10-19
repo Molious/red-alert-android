@@ -35,9 +35,13 @@ export function createGuidance(route,{revision=1}={}){
   const distanceToTurn=Math.max(0,(next?.atMeters??total)-progress),remaining=Math.max(0,total-progress),nearTurn=distanceToTurn<=Math.max(80,speed*15),turnSoon=distanceToTurn<=Math.max(45,speed*6);
   const cues=[];const current=instruction(next);
   if(!outside&&next){const key=`${revision}:${next.id}`,near=Math.max(20,speed*3),advance=clamp(speed*15,80,500);let stage='';if(distanceToTurn<=near&&!sent.has(key+':now')){stage='now';sent.add(key+':advance');}else if(distanceToTurn<=advance&&!sent.has(key+':advance')&&!sent.has(key+':now'))stage='advance';if(stage){sent.add(key+':'+stage);const text=stage==='now'?current:`In ${Math.max(10,Math.round(distanceToTurn/10)*10)} metres, ${current.charAt(0).toLowerCase()+current.slice(1)}`;lastCue=text;cues.push({id:key+':'+stage,text,character:'WRAITH',priority:'navigation',...(stage==='now'?{urgent:true}:{})});}}
-  const end=route.points.at(-1),arrivalOK=!outside&&p.accuracy<=25&&Number.isFinite(p.speed)&&p.speed>=0&&p.speed<=2&&remaining<=50&&meters([p.lat,p.lng],end)<=35;
-  if(arrivalOK){arrival.push(p.ts);arrival=arrival.slice(-3);}else arrival=[];
-  const arrived=arrival.length===3&&arrival[2]-arrival[0]>=3000;
+  // Arrival: stopped near the end of the route. Works off the route line too (driveways, car parks), with
+  // unknown GPS speed when the position is not moving, and with modest GPS accuracy.
+  const end=route.points.at(-1),dEnd=meters([p.lat,p.lng],end),prev=recent.at(-2);
+  const still=Number.isFinite(p.speed)&&p.speed>=0?p.speed<=2.5:!!prev&&meters([prev.lat,prev.lng],[p.lat,p.lng])<=4;
+  const arrivalOK=p.accuracy<=40&&still&&(dEnd<=40&&progress>=total*.5||!outside&&remaining<=50&&dEnd<=60);
+  if(arrivalOK){arrival.push(p.ts);arrival=arrival.slice(-2);}else arrival=[];
+  const arrived=arrival.length===2&&arrival[1]-arrival[0]>=1500;
   state={valid:!outside,progressMeters:progress,remainingMeters:remaining,nextInstruction:current,distanceToTurn,nearTurn,turnSoon,arrived,offRoute,parked:parkedEvidence(recent,now),cues};return snapshot();
  }
  return {update,snapshot,repeat:()=>lastCue||state.nextInstruction};

@@ -123,3 +123,31 @@ main>.player-identity{order:0;margin:8px 4vw}main>.viewport{order:1;min-height:5
 .salvage-feed{position:absolute;z-index:9;right:10px;top:150px;width:min(52%,240px);background:#03101cee;border:1px solid #ffb35c;border-radius:8px;padding:4px;box-shadow:0 0 16px #ff9a3c55;pointer-events:none}
 .salvage-feed small{display:block;font:600 9px/1.4 ui-monospace,monospace;letter-spacing:.12em;color:#ffcf9a;padding:0 2px 3px}
 .salvage-feed video{display:block;width:100%;border-radius:5px;background:#000}
+
+/* Combat in the windscreen sky (1.0.27) */
+.combat-hud{position:absolute;z-index:6;left:0;right:0;top:86px;height:min(42%,330px);pointer-events:none;overflow:hidden}
+.combat-hud[hidden]{display:none}
+.combat-enemy{position:absolute;width:64px;height:44px;transform:translate(-50%,-50%) scale(.75);filter:drop-shadow(0 0 8px #ff3b3b) drop-shadow(0 0 2px #fff4);transition:transform .6s,opacity .6s}
+.combat-enemy[data-tier=raider]{width:84px;height:56px}.combat-enemy[data-tier=warship]{width:116px;height:72px}
+.combat-hud[data-mode=combat] .combat-enemy,.combat-hud[data-mode=fire] .combat-enemy{transform:translate(-50%,-50%) scale(1.05)}
+.combat-enemy svg{width:100%;height:100%}
+.combat-hud[data-mode=destroyed] .combat-enemy{opacity:0;transform:translate(-50%,-50%) scale(1.6) rotate(25deg)}
+.combat-hud[data-mode=evaded] .combat-enemy{opacity:0;transform:translate(-50%,-80%) scale(.4)}
+.combat-reticle{position:absolute;width:96px;height:96px;color:#ffb35c;transform:translate(-50%,-50%) scale(var(--size,1.2));transition:color .2s;filter:drop-shadow(0 0 6px currentColor)}
+.combat-reticle svg{width:100%;height:100%;animation:reticle-spin 3s linear infinite}
+.combat-reticle.locked{color:#ff3b30;filter:drop-shadow(0 0 8px #ff3b30) drop-shadow(0 0 2px #fff)}.combat-reticle.locked svg{animation:reticle-pulse .45s ease-in-out infinite alternate}
+.combat-hud[data-mode=contact] .combat-reticle{color:#5ff0ff;opacity:.7}
+.combat-hud[data-mode=destroyed] .combat-reticle,.combat-hud[data-mode=evaded] .combat-reticle{opacity:0;transition:opacity .5s}
+@keyframes reticle-spin{to{transform:rotate(360deg)}}@keyframes reticle-pulse{from{transform:scale(1)}to{transform:scale(.9)}}
+.combat-beams{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+.combat-beams .beam{stroke:#7ff3ff;stroke-width:.9;vector-effect:non-scaling-stroke;stroke-width:4;filter:drop-shadow(0 0 4px #4ee4ff)}
+.combat-hud[data-mode=fire] .combat-beams{animation:beam-fire .18s steps(2) 5}
+@keyframes beam-fire{0%{opacity:1}50%{opacity:.2}100%{opacity:1}}
+.combat-boom{position:absolute;width:20px;height:20px;border-radius:50%;transform:translate(-50%,-50%) scale(0);background:radial-gradient(circle,#fff 0,#ffd27a 25%,#ff7a2a 50%,#ff3b3000 72%)}
+.combat-hud[data-mode=destroyed] .combat-boom{animation:boom 1.8s ease-out forwards}
+@keyframes boom{0%{transform:translate(-50%,-50%) scale(.2);opacity:1}60%{opacity:1}100%{transform:translate(-50%,-50%) scale(9);opacity:0}}
+.combat-hud[data-mode=evaded]{animation:cloak 1.2s ease-out}
+@keyframes cloak{0%{backdrop-filter:none}30%{backdrop-filter:hue-rotate(160deg) blur(1px)}100%{backdrop-filter:none}}
+.combat-label{position:absolute;left:50%;top:6px;transform:translateX(-50%);font:700 11px/1.3 ui-monospace,monospace;letter-spacing:.16em;color:#ffd0a8;background:#1a0606cc;border:1px solid #ff5a5a88;border-radius:4px;padding:3px 8px;text-shadow:0 0 6px #ff3b30}
+.combat-hud[data-mode=contact] .combat-label{color:#bff6ff;border-color:#4ee4ff88;background:#04101ccc;text-shadow:0 0 6px #4ee4ff}
+@media(prefers-reduced-motion:reduce){.combat-reticle svg,.combat-hud[data-mode=fire] .combat-beams{animation:none}}

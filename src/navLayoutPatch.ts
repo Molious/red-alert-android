@@ -112,6 +112,26 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-nav-mode=on] .cockpit-dashboard.tray-open{inset:auto 2% 4px}
 .live-cockpit .viewport[data-nav-mode=on] .navigation-strip .nav-voice button{display:none}
 }
+/* 1.0.27: bridge view - small side map screen, slim key bar, captain's chair visible */
+.mole-bridge-captain{display:none}
+.live-cockpit .viewport[data-bridge=compact] .live-navigation{inset:88px 3% auto 50%;height:26%;border-radius:10px;border:1px solid #5d9ba9;box-shadow:0 0 0 4px #08121dcc,0 0 18px #63dcff44}
+.live-cockpit .viewport[data-bridge=compact] .mole-orient,.live-cockpit .viewport[data-bridge=compact] .mole-map-zoom,.live-cockpit .viewport[data-bridge=compact] .map-status,.live-cockpit .viewport[data-bridge=compact] .leaflet-control-zoom{display:none!important}
+.live-cockpit .viewport[data-bridge=compact] .mole-bridge-captain{display:block;position:absolute;z-index:4;left:50%;bottom:170px;height:30%;max-height:260px;transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 6px 14px #000d)}
+.live-cockpit .viewport[data-bridge=compact] .cockpit-dashboard{background:linear-gradient(#05070b00,#05070bdd 30%);border:0;box-shadow:none;border-radius:0;inset:auto 0 0;padding:0 10px 8px;max-height:none;overflow:visible}
+.live-cockpit .viewport[data-bridge=compact] .cockpit-dashboard>:not(.crew-comms):not(.road-status):not(.flight-actions):not(.crew-event){display:none}
+.live-cockpit .viewport[data-bridge=compact] .road-status:not(.mole-alert){display:none}
+.live-cockpit .viewport[data-bridge=compact] .crew-comms{background:linear-gradient(90deg,#04101ce0,#04101c80 70%,#04101c00);border-left:2px solid #c4a3ec;border-radius:0 6px 6px 0;margin:0 0 6px}
+.live-cockpit .viewport[data-bridge=compact] .crew-comms span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.live-cockpit .viewport[data-bridge=compact] .flight-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.live-cockpit .viewport[data-bridge=compact] .flight-actions button{display:none}
+.live-cockpit .viewport[data-bridge=compact] .flight-actions button:is([data-action=destination],[data-action=station],[data-action=crew],.tray-toggle),
+.live-cockpit .viewport[data-bridge=compact] .flight-actions button:is([data-action=launch],[data-action=cancel],[data-action=repeat]):not(:disabled),
+.live-cockpit .viewport[data-bridge=compact] .flight-actions button[data-action=resume]:not([hidden]){display:flex;font-size:0;min-height:44px;padding:0 2px;margin:0;border-radius:7px;color:#bff6ff;background:linear-gradient(#122231f5,#070d16f5);border:1px solid #2e4b5c;box-shadow:inset 0 1px 0 #ffffff1a,inset 0 -3px 0 #ff9a3c40,0 3px 8px #000b;align-items:center;justify-content:center}
+.live-cockpit .viewport[data-bridge=compact] .flight-actions button::after{content:attr(data-key);font:600 10px/1.15 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-align:center;text-shadow:0 0 6px #4ee4ff99;white-space:pre-line}
+.live-cockpit .viewport[data-bridge=compact] .flight-actions button[data-action=launch]{border-color:#77e3de;background:linear-gradient(#155563,#0a2a33)}
+.live-cockpit .viewport[data-bridge=compact] .flight-actions button[data-action=cancel]{color:#ffc9c9;border-color:#6a3440}
+.live-cockpit .viewport[data-bridge=compact] .tray-toggle{border-color:#4ee4ff88!important}
+.live-cockpit .viewport[data-bridge=compact] .combat-hud,.live-cockpit .viewport[data-bridge=compact] .salvage-feed{display:none}
 `;
 
 export const navLayoutScript = `(function(){
@@ -223,6 +243,7 @@ export const navLayoutScript = `(function(){
   placeDash();
   var con2=view&&view.querySelector('.mole-console'),cur=con2&&con2.querySelector('.mole-captain');
   if(con2&&cur&&cur.dataset.captain!==captainKey()){var ng=captainEl('seat');if(ng)con2.replaceChild(ng,cur);}
+  if(view){var bc=view.querySelector('.mole-bridge-captain');if(!bc||bc.dataset.captain!==captainKey()){var nb=captainEl('mole-bridge-captain');if(nb){if(bc)bc.replaceWith(nb);else view.appendChild(nb);}}}
   var ls=document.querySelector('.launch-scene');if(ls&&!ls.querySelector('.mole-captain')){var lg=captainEl('launch');if(lg)ls.insertBefore(lg,ls.querySelector('.launch-copy'));}
  }
 
@@ -245,7 +266,7 @@ export const navLayoutScript = `(function(){
   if(actions)new MutationObserver(keyLabels).observe(actions,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-action']});
   if(actions&&!actions.querySelector('.tray-toggle')){
    var t=document.createElement('button');t.type='button';t.className='tray-toggle';t.textContent='More controls';t.setAttribute('aria-expanded','false');
-   t.onclick=function(){var open=!dash.classList.contains('tray-open');dash.classList.toggle('tray-open',open);t.textContent=open?'Fewer controls':'More controls';t.setAttribute('aria-expanded',String(open));keyLabels();};
+   t.onclick=function(){var open=!dash.classList.contains('tray-open');dash.classList.toggle('tray-open',open);t.textContent=open?'Fewer controls':'More controls';t.setAttribute('aria-expanded',String(open));keyLabels();bridgeSync();};
    actions.appendChild(t);
   }
   keyLabels();
@@ -255,6 +276,10 @@ export const navLayoutScript = `(function(){
   // Only time spent stopped DURING a journey counts; the clock restarts at every launch.
   var lastPhase='';
   setInterval(function(){var v=moving(),was=parkedView,p=(phase&&phase.textContent||'').trim().toLowerCase(),inJourney=PHASES.indexOf(p)>=0&&p!=='launching';if(p!==lastPhase&&(p==='launching'||PHASES.indexOf(lastPhase)<0)){stoppedSince=0;parkedView=false;}lastPhase=p;if(!inJourney){stoppedSince=0;parkedView=false;}else if(v!==null&&v>=8){stoppedSince=0;parkedView=false;}else if(v===null||v<=2){if(!stoppedSince)stoppedSince=Date.now();if(Date.now()-stoppedSince>=30000)parkedView=true;}else stoppedSince=0;if(was!==parkedView)sync();},1000);
+  // Bridge view is compact (side map, slim keys) unless planning a destination, a panel is open, or Menu is open.
+  function bridgeSync(){if(!view)return;var off=view.dataset.navMode!=='on',panel=dash.querySelector('.station-panel:not([hidden]),.crew-panel:not([hidden])');var want=off&&!view.classList.contains('planning-destination')&&!panel&&!dash.classList.contains('tray-open')?'compact':'full';if(view.dataset.bridge!==want){view.dataset.bridge=want;setTimeout(resize,60);}}
+  new MutationObserver(bridgeSync).observe(dash,{subtree:true,attributes:true,attributeFilter:['hidden','class']});
+  if(view)new MutationObserver(bridgeSync).observe(view,{attributes:true,attributeFilter:['class','data-nav-mode']});
   function sync(){
    var p=(phase&&phase.textContent||'').trim().toLowerCase();var on=PHASES.indexOf(p)>=0&&!(parkedView&&p!=='launching');if(view)view.dataset.stopped=parkedView&&PHASES.indexOf(p)>=0?'true':'false';
    var want=on?'on':'off';if(view&&view.dataset.navMode!==want){var was=view.dataset.navMode;view.dataset.navMode=want;if(!was&&!on)return;if(!on){dash.classList.remove('tray-open');var b=dash.querySelector('.tray-toggle');if(b){b.textContent='More controls';b.setAttribute('aria-expanded','false');}}setTimeout(resize,50);}
@@ -263,7 +288,7 @@ export const navLayoutScript = `(function(){
   var status=dash.querySelector('.road-status');
   function alertSync(){if(!status)return;status.classList.toggle('mole-alert',/paused|error|failed|lost|unavailable|denied|could not/i.test(status.textContent||''));}
   if(status){new MutationObserver(alertSync).observe(status,{childList:true,characterData:true,subtree:true});alertSync();}
-  sync();
+  sync();bridgeSync();
  }
  function start(){install();bridgeArt();wire();windscreen();hud();seats();charUnlock();new MutationObserver(function(){if(!document.getElementById('mole-nav-layout'))install();bridgeArt();wire();windscreen();hud();seats();charUnlock();}).observe(document.documentElement,{childList:true,subtree:true});}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
