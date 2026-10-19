@@ -1,6 +1,12 @@
 {
-  "state": "running",
+  "state": "success",
   "version": "1.0.17",
+  "version_code": 18,
+  "apk": "MoleBeyond-1.0.17-arm64.apk",
+  "sha256": "cacbae191e07f88abdd4de6df9c0042fca1187c70e4a5faafbb085e5b65d59b7",
+  "bytes": 32187171,
   "source_commit": "070815cfae3898b2ee56c62365789b7ba523c23b",
+  "signing": "template debug/test key",
+  "physical_device_tested": false,
   "run_url": "https://github.com/Molious/red-alert-android/actions/runs/39187108683"
 }
