@@ -133,7 +133,7 @@ export const navLayoutScript = `(function(){
      ship.style.opacity=dot.getAttribute('fill-opacity')==='1'?'1':'.5';}
     else ship.style.display='none';}
    else ship.style.display='none';
-   requestAnimationFrame(frame);
+   placeDash();requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
  }
@@ -161,8 +161,8 @@ export const navLayoutScript = `(function(){
    var k=classifyTurn(next&&next.textContent);if(k!==kind){kind=k;icon.innerHTML='<svg viewBox="0 0 56 56">'+ICONS[k]+'</svg>';}
    var t=dist&&dist.textContent||'',m=/(\\d+) m to next/.exec(t),r=/([\\d.]+) km remaining/.exec(t);
    big.textContent=m?(+m[1]>=1000?(m[1]/1000).toFixed(1)+' km':m[1]+' m'):'';
-   box.querySelector('[data-mole-left]').textContent=r?r[1]:'—';
-   var sp=document.querySelector('.cockpit-dashboard [data-speed]');box.querySelector('[data-mole-speed]').textContent=sp&&/^\\d+$/.test(sp.textContent.trim())?sp.textContent.trim():'0';
+   document.querySelectorAll('[data-mole-left]').forEach(function(e){e.textContent=r?r[1]:'—';});
+   var sp=document.querySelector('.cockpit-dashboard [data-speed]'),sv=sp&&/^\\d+$/.test(sp.textContent.trim())?sp.textContent.trim():'0';document.querySelectorAll('[data-mole-speed]').forEach(function(e){e.textContent=sv;});
   }
   var mo=new MutationObserver(upd);[next,dist,document.querySelector('.cockpit-dashboard [data-speed]')].forEach(function(e){if(e)mo.observe(e,{childList:true,characterData:true,subtree:true});});
   upd();
@@ -194,6 +194,10 @@ export const navLayoutScript = `(function(){
    '.mole-console{display:none}'+
    '@media (orientation:portrait){.live-cockpit .viewport[data-nav-mode=on]{--crew-h:118px}'+
    '.live-cockpit .viewport[data-nav-mode=on] .mole-console{display:block;position:absolute;left:0;right:0;bottom:0;height:calc(var(--tray-h) + var(--crew-h) + 12px);z-index:4;background:'+pl+' 50% 92%/auto 150% no-repeat;pointer-events:none}}'+
+   '.mole-dash{display:none}'+
+   '@media (orientation:portrait){.live-cockpit .viewport[data-nav-mode=on] .mole-dash{display:flex;position:absolute;align-items:center;justify-content:space-around;color:#fff;font:600 10px system-ui,sans-serif;text-align:center;text-shadow:0 0 6px #4ee4ff}'+
+   '.live-cockpit .viewport[data-nav-mode=on] .mole-dash b{display:block;font-size:17px;line-height:1}.live-cockpit .viewport[data-nav-mode=on] .mole-dash small{color:#9fdfe8;font-size:9px}'+
+   '.live-cockpit .viewport[data-nav-mode=on] .mole-hud{display:none}}'+
    '.mole-captain{position:absolute;pointer-events:none;aspect-ratio:382/512}'+
    '.mole-captain img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}'+
    '.mole-captain.flip img{transform:scaleX(-1)}'+
@@ -209,9 +213,20 @@ export const navLayoutScript = `(function(){
    '@media(prefers-reduced-motion:reduce){.launch-scene .launch-art,.launch-scene .launch-streaks,.launch-scene .mole-captain{animation:none}}';
   document.head.appendChild(st);
  }
+
+ // Live readouts sit on the console screen that the artwork leaves blank (image px 982-1198 x 528-610 of 1672x941).
+ var dashSize='';
+ function placeDash(){
+  var con=document.querySelector('.live-cockpit .mole-console'),dash=con&&con.querySelector('.mole-dash');if(!dash)return;
+  var H=con.offsetHeight,vw=con.offsetWidth,key=H+'x'+vw;if(!H||key===dashSize)return;dashSize=key;
+  var k=1.5*H/941,x0=(vw-1672*k)*0.5,y0=(H-1.5*H)*0.92;
+  dash.style.left=(x0+986*k).toFixed(1)+'px';dash.style.top=(y0+530*k).toFixed(1)+'px';dash.style.width=(208*k).toFixed(1)+'px';dash.style.height=(78*k).toFixed(1)+'px';
+ }
+ window.addEventListener('resize',function(){dashSize='';setTimeout(placeDash,60);});
  function seats(){
   var view=document.querySelector('.live-cockpit .viewport');
-  if(view&&!view.querySelector('.mole-console')){var con=document.createElement('div');con.className='mole-console';var g=captainEl('seat');if(g)con.appendChild(g);view.appendChild(con);}
+  if(view&&!view.querySelector('.mole-console')){var con=document.createElement('div');con.className='mole-console';var dash=document.createElement('div');dash.className='mole-dash';dash.innerHTML='<div><b data-mole-speed>0</b><small>km/h</small></div><div><b data-mole-left>—</b><small>km left</small></div>';con.appendChild(dash);var g=captainEl('seat');if(g)con.appendChild(g);view.appendChild(con);}
+  placeDash();
   var con2=view&&view.querySelector('.mole-console'),cur=con2&&con2.querySelector('.mole-captain');
   if(con2&&cur&&cur.dataset.captain!==captainKey()){var ng=captainEl('seat');if(ng)con2.replaceChild(ng,cur);}
   var ls=document.querySelector('.launch-scene');if(ls&&!ls.querySelector('.mole-captain')){var lg=captainEl('launch');if(lg)ls.insertBefore(lg,ls.querySelector('.launch-copy'));}
