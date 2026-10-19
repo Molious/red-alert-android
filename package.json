@@ -1,6 +1,6 @@
 {
   "name": "mole-beyond-hybrid-test",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "main": "index.ts",
   "dependencies": {
     "expo": "~57.0.27",

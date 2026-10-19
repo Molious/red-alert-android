@@ -17,7 +17,7 @@ function play(item,signal){view?.caption(item);if(signal.aborted)return Promise.
  else if(window.speechSynthesis&&window.SpeechSynthesisUtterance){utterance=new SpeechSynthesisUtterance(item.text);utterance.lang='en-AU';utterance.rate=.98;utterance.pitch=item.character==='VEX'?.8:item.character==='WRAITH'?.95:1;utterance.onend=done;utterance.onerror=done;window.speechSynthesis.speak(utterance);}else done();
  });}
 const audio=createDialogueQueue({play});
-function scheduleMic(){clearTimeout(micRetry);if(!started||!handsFree||!micPermitted||speechPlaying||preparation!==null||!controller?.snapshot().active||document.hidden)return;micRetry=setTimeout(()=>{if(started&&handsFree&&!speechPlaying&&controller.snapshot().active&&!document.hidden)listen();},300);}
+function scheduleMic(){clearTimeout(micRetry);if(!globalThis.document)return;if(!started||!handsFree||!micPermitted||speechPlaying||preparation!==null||!controller?.snapshot().active||document.hidden)return;micRetry=setTimeout(()=>{if(!globalThis.document)return;if(started&&handsFree&&!speechPlaying&&controller.snapshot().active&&!document.hidden)listen();},300);}
 function stopMic(preserve=false){if(!preserve)handsFree=false;clearTimeout(micRetry);listenEpoch++;if(listening!==null){native()?.cancelListen?.(listening);listening=null;}recognition?.abort();recognition=null;view?.micState(handsFree,false);}
 function stopGPS(){watchEpoch++;if(watch!==null){if(nativeWatch)native()?.clearWatch(watch);else navigator.geolocation?.clearWatch(watch);watch=null;}}
 function syncNative(s){
