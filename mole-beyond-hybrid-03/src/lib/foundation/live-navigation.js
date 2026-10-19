@@ -1,3 +1,4 @@
+import {createCosmicNavigation} from './cosmic-navigation.js';
 // The real road layer only. There is no fictional map or mode switch in normal play.
 export async function installLiveNavigation({viewport=document.querySelector('.viewport'),onStatus=()=>{}}={}){
  if(!document.querySelector)return;
@@ -13,10 +14,27 @@ export async function installLiveNavigation({viewport=document.querySelector('.v
  function positionAtmosphere(){const size=map.getSize();atmosphere.style.width=size.x+'px';atmosphere.style.height=size.y+'px';L.DomUtil.setPosition(atmosphere,map.containerPointToLayerPoint([0,0]));}
  map.on('move resize zoomend',positionAtmosphere);positionAtmosphere();
  L.control.zoom({position:'bottomright'}).addTo(map);
+ // Use the vector cockpit only during a live journey. Parked planning keeps Leaflet.
+ let cosmic,cosmicPending=false,disposed=false,latest;
+ const vector=document.createElement('div');vector.className='mole-vector-map';panel.append(vector);
+ const credit=document.createElement('div');credit.className='mole-map-credit';credit.innerHTML='<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a>';panel.append(credit);
+ const zoom=document.createElement('div');zoom.className='mole-map-zoom';
+ for(const [label,delta] of [['Zoom in',1],['Zoom out',-1]]){const b=document.createElement('button');b.type='button';b.textContent=delta>0?'+':'−';b.setAttribute('aria-label',label);b.onclick=()=>{if(cosmic)cosmic.map.zoomTo(cosmic.map.getZoom()+delta);else map.setZoom(map.getZoom()+delta);};zoom.append(b);}panel.append(zoom);
+ async function ensureCosmic(){
+  if(cosmic||cosmicPending||disposed)return;
+  // Headless DOMs and older WebViews can retain the working flat road map.
+  if(!window.WebGLRenderingContext){panel.dataset.vectorUnavailable='true';notice.textContent='3D map unavailable · showing flat road map';return;}
+  cosmicPending=true;
+  try{const {default:maplibre}=await import('maplibre-gl');if(disposed)return;
+   cosmic=createCosmicNavigation({maplibre,container:vector,onStatus:text=>{notice.textContent=text;panel.dataset.vectorError=String(/unavailable|interrupted/.test(text));}});if(latest)cosmic.update(latest);
+  }catch(e){panel.dataset.vectorUnavailable='true';notice.textContent='3D map unavailable · showing flat road map';onStatus('3D map unavailable');}
+ }
  let marker,circle,destination,routeLayer,lastRoute,lastDest,lastPhase=null,following=true;
  map.on('dragstart',()=>following=false);
  return {
   update(s){
+   latest=s;const active=['navigating','recalculating','signal lost','launching'].includes(s.journey?.phase);panel.dataset.cosmicActive=String(active);
+   if(active)ensureCosmic();cosmic?.update(s);
    const phase=s.journey?.phase;if(phase==='navigating'&&lastPhase!=='navigating')following=true;lastPhase=phase;
    if(s.route!==lastRoute){lastRoute=s.route;routeLayer?.remove();routeLayer=null;if(s.route)routeLayer=L.polyline(s.route.points,{color:'#4ee4ff',weight:6,opacity:1}).addTo(map);if(s.route&&s.journey?.phase==='route_ready')map.fitBounds(routeLayer.getBounds(),{padding:[20,20],animate:false});}
    const target=s.selected||s.journey?.destination;
@@ -27,7 +45,7 @@ export async function installLiveNavigation({viewport=document.querySelector('.v
    }else marker?.setStyle({opacity:.4,fillOpacity:.2});
    if(s.journey?.phase==='navigating'&&s.route!==undefined&&!s.planning&&s.guidance?.valid&&following)map.invalidateSize();
   },
-  recenter(s){following=true;if(s.fix)map.setView([s.fix.lat,s.fix.lng],16);map.invalidateSize();},
-  resize(){map.invalidateSize();},dispose(){map.remove();panel.remove();}
+  recenter(s){cosmic?.recenter(s);following=true;if(s.fix)map.setView([s.fix.lat,s.fix.lng],16);map.invalidateSize();},
+  resize(){map.invalidateSize();cosmic?.resize();},dispose(){disposed=true;cosmic?.dispose();credit.remove();map.remove();panel.remove();}
  };
 }
