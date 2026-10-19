@@ -1,0 +1,146 @@
+[
+  {
+    "key": "human-male-military",
+    "chair": "human-male-military-chair.webp",
+    "person": "human-male-military-person.webp",
+    "flip": false
+  },
+  {
+    "key": "human-male-support",
+    "chair": "human-male-support-chair.webp",
+    "person": "human-male-support-person.webp",
+    "flip": false
+  },
+  {
+    "key": "human-male-explorer",
+    "chair": "human-male-explorer-chair.webp",
+    "person": "human-male-explorer-person.webp",
+    "flip": false
+  },
+  {
+    "key": "human-female-military",
+    "chair": "human-female-military-chair.webp",
+    "person": "human-female-military-person.webp",
+    "flip": false
+  },
+  {
+    "key": "human-female-support",
+    "chair": "human-female-support-chair.webp",
+    "person": "human-female-support-person.webp",
+    "flip": false
+  },
+  {
+    "key": "human-female-explorer",
+    "chair": "human-female-explorer-chair.webp",
+    "person": "human-female-explorer-person.webp",
+    "flip": false
+  },
+  {
+    "key": "reptilian-male-military",
+    "chair": "reptilian-male-military-chair.webp",
+    "person": "reptilian-male-military-person.webp",
+    "flip": false
+  },
+  {
+    "key": "reptilian-male-support",
+    "chair": "reptilian-male-support-chair.webp",
+    "person": "reptilian-male-support-person.webp",
+    "flip": false
+  },
+  {
+    "key": "reptilian-male-explorer",
+    "chair": "reptilian-male-explorer-chair.webp",
+    "person": "reptilian-male-explorer-person.webp",
+    "flip": false
+  },
+  {
+    "key": "reptilian-female-military",
+    "chair": "reptilian-female-military-chair.webp",
+    "person": "reptilian-female-military-person.webp",
+    "flip": false
+  },
+  {
+    "key": "reptilian-female-support",
+    "chair": "reptilian-female-support-chair.webp",
+    "person": "reptilian-female-support-person.webp",
+    "flip": false
+  },
+  {
+    "key": "reptilian-female-explorer",
+    "chair": "reptilian-female-explorer-chair.webp",
+    "person": "reptilian-female-explorer-person.webp",
+    "flip": false
+  },
+  {
+    "key": "insectoid-male-military",
+    "chair": "insectoid-male-military-chair.webp",
+    "person": "insectoid-male-military-person.webp",
+    "flip": false
+  },
+  {
+    "key": "insectoid-male-support",
+    "chair": "insectoid-male-support-chair.webp",
+    "person": "insectoid-male-support-person.webp",
+    "flip": false
+  },
+  {
+    "key": "insectoid-male-explorer",
+    "chair": "insectoid-male-explorer-chair.webp",
+    "person": "insectoid-male-explorer-person.webp",
+    "flip": false
+  },
+  {
+    "key": "insectoid-female-military",
+    "chair": "insectoid-female-military-chair.webp",
+    "person": "insectoid-female-military-person.webp",
+    "flip": false
+  },
+  {
+    "key": "insectoid-female-support",
+    "chair": "insectoid-female-support-chair.webp",
+    "person": "insectoid-female-support-person.webp",
+    "flip": true
+  },
+  {
+    "key": "insectoid-female-explorer",
+    "chair": "insectoid-female-explorer-chair.webp",
+    "person": "insectoid-female-explorer-person.webp",
+    "flip": false
+  },
+  {
+    "key": "light-being-male-military",
+    "chair": "light-being-male-military-chair.webp",
+    "person": "light-being-male-military-person.webp",
+    "flip": false
+  },
+  {
+    "key": "light-being-male-support",
+    "chair": "light-being-male-support-chair.webp",
+    "person": "light-being-male-support-person.webp",
+    "flip": false
+  },
+  {
+    "key": "light-being-male-explorer",
+    "chair": "light-being-male-explorer-chair.webp",
+    "person": "light-being-male-explorer-person.webp",
+    "flip": false
+  },
+  {
+    "key": "light-being-female-military",
+    "chair": "light-being-female-military-chair.webp",
+    "person": "light-being-female-military-person.webp",
+    "flip": false
+  },
+  {
+    "key": "light-being-female-support",
+    "chair": "light-being-female-support-chair.webp",
+    "person": "light-being-female-support-person.webp",
+    "flip": false
+  },
+  {
+    "key": "light-being-female-explorer",
+    "chair": "light-being-female-explorer-chair.webp",
+    "person": "light-being-female-explorer-person.webp",
+    "flip": false
+  }
+]

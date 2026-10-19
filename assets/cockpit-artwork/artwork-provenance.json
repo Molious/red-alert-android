@@ -1,0 +1,397 @@
+{
+  "project": "Last Mile Legends: Red Alert",
+  "generation_service": "Runway",
+  "captain_generation_tasks": [
+    {
+      "key": "insectoid-female-support",
+      "taskId": "d8b23327-001c-492f-8260-24e6091c6bd7"
+    },
+    {
+      "key": "human-male-military",
+      "taskId": "2b71367c-f75e-4e0a-b02f-8173b18952e5",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male human military captain seated in a gunmetal science-fiction captain chair. Human with exactly the same skin tone, facial identity, hairstyle and gender as the reference. Military flight armour in charcoal and gunmetal, structured shoulder armour, restrained cyan trim. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands on armrests. Photorealistic cinematic game sprite, amber rim light, neutral cool fill. Plain white studio background, no environment, no dashboard, no map, no words, no logos or insignia. Match reference identity, do not replace with a different species. One character and one chair, centered."
+    },
+    {
+      "key": "human-male-support",
+      "taskId": "a5269921-d4d9-4229-a294-dac4e5518426",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male human support captain seated in a gunmetal science-fiction captain chair. Human with exactly the same skin tone, facial identity, hairstyle and gender as the reference. Support officer flight suit and utility harness, restrained teal and green details. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands on armrests. Photorealistic cinematic game sprite, amber rim light, neutral cool fill. Plain white studio background, no environment, no dashboard, no map, no words, no logos or insignia. Match reference identity, do not replace with a different species. One character and one chair, centered."
+    },
+    {
+      "key": "human-male-explorer",
+      "taskId": "f68cdda7-a68d-46b3-8b94-78ab7857f381",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male human explorer captain seated in a gunmetal science-fiction captain chair. Human with exactly the same skin tone, facial identity, hairstyle and gender as the reference. Explorer flight suit with practical expedition harness, restrained amber details. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands on armrests. Photorealistic cinematic game sprite, amber rim light, neutral cool fill. Plain white studio background, no environment, no dashboard, no map, no words, no logos or insignia. Match reference identity, do not replace with a different species. One character and one chair, centered."
+    },
+    {
+      "key": "human-female-military",
+      "taskId": "d65585d3-e94b-437c-99ae-387220e4759d",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female human military captain seated in a gunmetal science-fiction captain chair. Human with exactly the same skin tone, facial identity, hairstyle and gender as the reference. Military flight armour in charcoal and gunmetal, structured shoulder armour, restrained cyan trim. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands on armrests. Photorealistic cinematic game sprite, amber rim light, neutral cool fill. Plain white studio background, no environment, no dashboard, no map, no words, no logos or insignia. Match reference identity, do not replace with a different species. One character and one chair, centered."
+    },
+    {
+      "key": "human-female-support",
+      "taskId": "5336ce06-e91d-4a11-938d-718a585d4ed7",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female human support captain seated in a gunmetal science-fiction captain chair. Human with the same skin tone, facial identity, hairstyle and gender as the reference. Preserve the reference's support uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "human-female-explorer",
+      "taskId": "fb66ee9f-5691-46fe-a51e-6b71d0a58956",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female human explorer captain seated in a gunmetal science-fiction captain chair. Human with the same skin tone, facial identity, hairstyle and gender as the reference. Preserve the reference's explorer uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "reptilian-male-military",
+      "taskId": "08449746-45b5-4d95-8da6-27cb93c1abe9",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male reptilian military captain seated in a gunmetal science-fiction captain chair. True reptilian alien with scaled skin and lizard head, preserve the alien head shape and scales in the reference. No scalp hair or human skin. Preserve the reference's military uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "reptilian-male-support",
+      "taskId": "09d19c56-80d6-4f73-95a2-ca73f2b1f692",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male reptilian support captain seated in a gunmetal science-fiction captain chair. True reptilian alien with scaled skin and lizard head, preserve the alien head shape and scales in the reference. No scalp hair or human skin. Preserve the reference's support uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "reptilian-male-explorer",
+      "taskId": "92b35641-3a53-420f-b2c8-56cf012122b2",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male reptilian explorer captain seated in a gunmetal science-fiction captain chair. True reptilian alien with scaled skin and lizard head, preserve the alien head shape and scales in the reference. No scalp hair or human skin. Preserve the reference's explorer uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "reptilian-female-military",
+      "taskId": "6c8a0f22-21ab-465e-9e17-626cd08592dd",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female reptilian military captain seated in a gunmetal science-fiction captain chair. True reptilian alien with scaled skin and lizard head, preserve the alien head shape and scales in the reference. No scalp hair or human skin. Preserve the reference's military uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "reptilian-female-support",
+      "taskId": "986dd0e5-f037-4450-83d3-840cdd682d24",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female reptilian support captain seated in a gunmetal science-fiction captain chair. True reptilian alien with scaled skin and lizard head, preserve the alien head shape and scales in the reference. No scalp hair or human skin. Preserve the reference's support uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "reptilian-female-explorer",
+      "taskId": "8223f401-bd31-4a89-8a78-a25cffcbf89a",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female reptilian explorer captain seated in a gunmetal science-fiction captain chair. True reptilian alien with scaled skin and lizard head, preserve the alien head shape and scales in the reference. No scalp hair or human skin. Preserve the reference's explorer uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "insectoid-male-military",
+      "taskId": "4da11785-33d4-49ce-a4d9-0f46d1a2a6e5",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male insectoid military captain seated in a gunmetal science-fiction captain chair. Entirely insect alien with chitinous exoskeleton, compound eyes, antennae and insect mandibles, preserve the reference anatomy. No human skin, human facial features, human nose or scalp hair. Preserve the reference's military uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "insectoid-male-support",
+      "taskId": "ff2009ef-98c4-4a84-93a6-7fd2d4dbb6b4",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male insectoid support captain seated in a gunmetal science-fiction captain chair. Entirely insect alien with chitinous exoskeleton, compound eyes, antennae and insect mandibles, preserve the reference anatomy. No human skin, human facial features, human nose or scalp hair. Preserve the reference's support uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "insectoid-male-explorer",
+      "taskId": "b220c84f-eff1-4918-90ce-e4ddb0764278",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male insectoid explorer captain seated in a gunmetal science-fiction captain chair. Entirely insect alien with chitinous exoskeleton, compound eyes, antennae and insect mandibles, preserve the reference anatomy. No human skin, human facial features, human nose or scalp hair. Preserve the reference's explorer uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "insectoid-female-military",
+      "taskId": "7dcb3719-bf71-4895-ab14-836814a1743e",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female insectoid military captain seated in a gunmetal science-fiction captain chair. Entirely insect alien with chitinous exoskeleton, compound eyes, antennae and insect mandibles, preserve the reference anatomy. No human skin, human facial features, human nose or scalp hair. Preserve the reference's military uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "insectoid-female-explorer",
+      "taskId": "4defd18c-7759-4081-9f82-cd691f970459",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female insectoid explorer captain seated in a gunmetal science-fiction captain chair. Entirely insect alien with chitinous exoskeleton, compound eyes, antennae and insect mandibles, preserve the reference anatomy. No human skin, human facial features, human nose or scalp hair. Preserve the reference's explorer uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "light-being-male-military",
+      "taskId": "0ca5521a-c28a-4bc3-97d7-3dd5ee10faab",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male light-being military captain seated in a gunmetal science-fiction captain chair. Luminous faceted crystalline light-being, entire body and head made of glowing crystal/light as shown in the reference, not a human wearing crystal armour. No human skin or scalp hair. Preserve the reference's military uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "light-being-male-support",
+      "taskId": "88cad5b0-66b5-45fa-99c4-aed5c447d164",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male light-being support captain seated in a gunmetal science-fiction captain chair. Luminous faceted crystalline light-being, entire body and head made of glowing crystal/light as shown in the reference, not a human wearing crystal armour. No human skin or scalp hair. Preserve the reference's support uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "light-being-male-explorer",
+      "taskId": "edddc8c1-bccb-4764-bdaf-abc34f5c3951",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original male light-being explorer captain seated in a gunmetal science-fiction captain chair. Luminous faceted crystalline light-being, entire body and head made of glowing crystal/light as shown in the reference, not a human wearing crystal armour. No human skin or scalp hair. Preserve the reference's explorer uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "light-being-female-military",
+      "taskId": "ac61d60c-590f-4d44-9c05-ee039db06d1a",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female light-being military captain seated in a gunmetal science-fiction captain chair. Luminous faceted crystalline light-being, entire body and head made of glowing crystal/light as shown in the reference, not a human wearing crystal armour. No human skin or scalp hair. Preserve the reference's military uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "light-being-female-support",
+      "taskId": "a7433425-4c6c-4b58-8017-a9664d2b9cfd",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female light-being support captain seated in a gunmetal science-fiction captain chair. Luminous faceted crystalline light-being, entire body and head made of glowing crystal/light as shown in the reference, not a human wearing crystal armour. No human skin or scalp hair. Preserve the reference's support uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    },
+    {
+      "key": "light-being-female-explorer",
+      "taskId": "e11bd3de-ffd8-4177-815e-11cc30d6ee73",
+      "prompt": "Use @reference as the EXACT identity and clothing reference. Create ONE original female light-being explorer captain seated in a gunmetal science-fiction captain chair. Luminous faceted crystalline light-being, entire body and head made of glowing crystal/light as shown in the reference, not a human wearing crystal armour. No human skin or scalp hair. Preserve the reference's explorer uniform and its occupational details; use black/charcoal, with restrained cyan/green/amber accents and no bright red. BACK THREE-QUARTER VIEW from behind the LEFT shoulder, looking RIGHT toward an unseen windscreen. Chair back closest to camera; only a small right-facing side profile visible. Complete seated body, boots, chair, armrests and compact pedestal fully visible with comfortable margin; hands resting on armrests. Photorealistic cinematic game sprite, warm amber rim light, neutral cool fill. Plain white studio background. No environment, no dashboard, no map, no words, no logos or franchise insignia. Do not replace the reference character's species. One seated character and one chair, centered."
+    }
+  ],
+  "support_reframe_task": "aa20d0ae-2e2a-40f9-a16c-0d70d69c7e7c",
+  "parked_bridge_clean_task": "c4b3121e-a286-4e8f-b020-6479025ed744",
+  "navigation_plate_task": "173a0bfa-0fd4-49c2-9de2-cfd6a58da76f",
+  "transparent_layers": [
+    {
+      "key": "human-male-military",
+      "layer": "chair",
+      "taskId": "ad753465-7787-47f1-9644-7a4b33312595"
+    },
+    {
+      "key": "human-male-support",
+      "layer": "chair",
+      "taskId": "3ea7b59a-8f73-446a-a6a6-b4c05384faa3"
+    },
+    {
+      "key": "human-male-explorer",
+      "layer": "chair",
+      "taskId": "dfe4145a-2689-4e3f-9374-32208671529b"
+    },
+    {
+      "key": "human-female-military",
+      "layer": "chair",
+      "taskId": "2f962a33-dfa4-44f1-97d6-1e487927d65e"
+    },
+    {
+      "key": "human-male-military",
+      "layer": "person",
+      "taskId": "e64a9af6-d591-44cf-940c-fabbf0749581"
+    },
+    {
+      "key": "human-female-military",
+      "layer": "person",
+      "taskId": "b67a1aaa-8711-4b36-b26b-2a7a25bbfd71"
+    },
+    {
+      "key": "reptilian-male-military",
+      "layer": "person",
+      "taskId": "ca8a2d33-f98f-44f6-ad47-085d8c13055c"
+    },
+    {
+      "key": "reptilian-male-support",
+      "layer": "person",
+      "taskId": "90a22818-a8fa-4d77-869d-f53f81ca06e3"
+    },
+    {
+      "key": "reptilian-male-explorer",
+      "layer": "person",
+      "taskId": "c3d2cf9c-0de1-47c7-beb8-70f93c4cbbb9"
+    },
+    {
+      "key": "reptilian-female-military",
+      "layer": "person",
+      "taskId": "86f307b8-42a1-4f98-8802-be50fc344424"
+    },
+    {
+      "key": "reptilian-female-support",
+      "layer": "person",
+      "taskId": "9e8bc6bd-e8a5-45e8-9f2e-26aa1133d3e2"
+    },
+    {
+      "key": "reptilian-female-explorer",
+      "layer": "person",
+      "taskId": "2c0f4888-5caa-4e91-bb83-229443d87382"
+    },
+    {
+      "key": "insectoid-male-military",
+      "layer": "person",
+      "taskId": "c1ad0ef3-e2fb-412b-8c3a-aabba2814ef6"
+    },
+    {
+      "key": "insectoid-male-support",
+      "layer": "person",
+      "taskId": "59120ee8-9142-47a3-8647-ed7651da8a83"
+    },
+    {
+      "key": "insectoid-male-explorer",
+      "layer": "person",
+      "taskId": "b9a7ff8b-5ff3-4e1c-bc34-0f92cc7810cf"
+    },
+    {
+      "key": "insectoid-female-military",
+      "layer": "person",
+      "taskId": "8eb35418-3e86-4559-8d95-2b87c70edea3"
+    },
+    {
+      "key": "insectoid-female-explorer",
+      "layer": "person",
+      "taskId": "289ee0e0-d3db-4713-9c6e-7a4854702855"
+    },
+    {
+      "key": "light-being-male-support",
+      "layer": "person",
+      "taskId": "5d4f955a-6a81-4484-9e3a-f96ba62b48fd"
+    },
+    {
+      "key": "light-being-male-explorer",
+      "layer": "person",
+      "taskId": "c8bd2192-25a1-4078-8286-5c6f69181f10"
+    },
+    {
+      "key": "light-being-female-military",
+      "layer": "person",
+      "taskId": "fa61fc05-21ef-4ecb-950c-5cfe900ce1f1"
+    },
+    {
+      "key": "light-being-female-explorer",
+      "layer": "person",
+      "taskId": "6219c7b4-e843-445a-b69d-88da1dc08936"
+    },
+    {
+      "key": "human-male-support",
+      "layer": "person",
+      "taskId": "b8ef56f0-cd43-4ba8-86c9-0dc3c4a97c2a",
+      "flip": false
+    },
+    {
+      "key": "human-male-explorer",
+      "layer": "person",
+      "taskId": "4ed6d0a6-50a8-45f7-98e4-139616b4df67",
+      "flip": false
+    },
+    {
+      "key": "human-female-support",
+      "layer": "person",
+      "taskId": "7da2ec5f-e942-4b6b-9e32-274271b86dd5",
+      "flip": false
+    },
+    {
+      "key": "human-female-explorer",
+      "layer": "person",
+      "taskId": "687e05d9-55ff-4b92-8f8e-a329edcb4813",
+      "flip": false
+    },
+    {
+      "key": "light-being-male-military",
+      "layer": "person",
+      "taskId": "f4434c25-a047-45a8-8c22-12adfdc5b7d9",
+      "flip": false
+    },
+    {
+      "key": "light-being-female-support",
+      "layer": "person",
+      "taskId": "001e8dda-9034-464d-9b86-37722114118e",
+      "flip": false
+    },
+    {
+      "key": "human-female-explorer",
+      "layer": "chair",
+      "taskId": "06a784cb-8ea2-4daf-b414-8aa87d07cba5",
+      "flip": false
+    },
+    {
+      "key": "reptilian-male-military",
+      "layer": "chair",
+      "taskId": "ee8b6f6a-c6e4-4a22-aef5-2a66bd15d823",
+      "flip": false
+    },
+    {
+      "key": "reptilian-male-support",
+      "layer": "chair",
+      "taskId": "98101bb5-35bc-496c-86d7-e27a7e6896ed",
+      "flip": false
+    },
+    {
+      "key": "reptilian-male-explorer",
+      "layer": "chair",
+      "taskId": "aa0e3f9a-448e-40ec-984e-e6f6e8fbb8ad",
+      "flip": false
+    },
+    {
+      "key": "reptilian-female-military",
+      "layer": "chair",
+      "taskId": "4db1be2c-9a2c-4936-a439-f3a2cb2fb26a",
+      "flip": false
+    },
+    {
+      "key": "reptilian-female-support",
+      "layer": "chair",
+      "taskId": "579ead7b-f21e-4569-8279-7cd3ccc23fb3",
+      "flip": false
+    },
+    {
+      "key": "reptilian-female-explorer",
+      "layer": "chair",
+      "taskId": "616fe649-ea9d-462a-b698-1e3caf5b4984",
+      "flip": false
+    },
+    {
+      "key": "insectoid-male-military",
+      "layer": "chair",
+      "taskId": "5926c467-5f26-444d-9bfc-f706a2785012",
+      "flip": false
+    },
+    {
+      "key": "insectoid-male-support",
+      "layer": "chair",
+      "taskId": "004b8152-14ba-4563-a141-b2083f273f0e",
+      "flip": false
+    },
+    {
+      "key": "insectoid-male-explorer",
+      "layer": "chair",
+      "taskId": "f0b742e5-3888-471f-aed1-13c03e799fd1",
+      "flip": false
+    },
+    {
+      "key": "insectoid-female-military",
+      "layer": "chair",
+      "taskId": "77ace907-9902-4ea1-b0fb-49693c07a6e1",
+      "flip": false
+    },
+    {
+      "key": "insectoid-female-explorer",
+      "layer": "chair",
+      "taskId": "f98469e2-eddd-4d4d-84b3-c88c591a1f86",
+      "flip": false
+    },
+    {
+      "key": "light-being-male-military",
+      "layer": "chair",
+      "taskId": "36c999a3-3125-4ce3-b33c-fcd205ca160c",
+      "flip": false
+    },
+    {
+      "key": "light-being-male-support",
+      "layer": "chair",
+      "taskId": "3b1e19dc-866f-419c-b6e3-8c6773073dad",
+      "flip": false
+    },
+    {
+      "key": "light-being-male-explorer",
+      "layer": "chair",
+      "taskId": "4ef4dfb4-24f1-4890-ba6c-57e78dbb56c6",
+      "flip": false
+    },
+    {
+      "key": "light-being-female-military",
+      "layer": "chair",
+      "taskId": "b5e53c64-f2db-42a5-8316-b1d23dcedd54",
+      "flip": false
+    },
+    {
+      "key": "light-being-female-support",
+      "layer": "chair",
+      "taskId": "a1b93791-ffd4-459b-91ba-d67a83491c02",
+      "flip": false
+    },
+    {
+      "key": "light-being-female-explorer",
+      "layer": "chair",
+      "taskId": "df8be3fc-1f85-4e9c-9c83-f0c688d8b6ed",
+      "flip": false
+    },
+    {
+      "key": "human-female-support",
+      "layer": "chair",
+      "taskId": "03a3029d-8ffe-41c1-a91b-805b5854a192",
+      "flip": false
+    },
+    {
+      "key": "insectoid-female-support",
+      "layer": "chair",
+      "taskId": "9f760012-26e2-41b9-8509-0bb87e684adb",
+      "flip": true
+    },
+    {
+      "key": "insectoid-female-support",
+      "layer": "person",
+      "taskId": "be7815ef-446e-4e94-93a5-904fbecee5cd",
+      "flip": true
+    }
+  ]
+}
