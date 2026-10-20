@@ -10,12 +10,12 @@ Whoever finishes a task updates this file in the same PR.
 - **Last field test:** 2026-10-20 on 1.0.27 · Issue #2
 
 ## In review
-- #3 Directions voice survives screen off/on · PR #11 · Claude · safety · needs Chet's review + an APK build to compile the native patch
-- #5 Arrival at home; re-route at 1-second GPS; approximate-pin warning · PR #12 · Claude · safety · needs Chet's review
+- #3 Directions voice survives screen off/on · PR #12 · Claude · safety · needs Chet's review + an APK build to compile the native patch
+- #5 Arrival at home; re-route at 1-second GPS; approximate-pin warning · PR #13 · Claude · safety · needs Chet's review
 - #6 Bridge key bar · PR #10 (draft) · Chet · shared-file · Claude to review
 
 ## Waiting on Cory
-- Approve Issues #4, #7, #8, #9
+- Approve Issues #4, #7, #8, #9, #11
 - Field test #3 and #5 once a 1.0.28 test APK exists (lock the phone mid-route; drive home with a typed house number)
 - Decide whether `main` should catch up with the 1.0.27 build line (it's 53 commits behind; STATUS.md now lives on both)
 
@@ -23,6 +23,7 @@ Whoever finishes a task updates this file in the same PR.
 - #4 Crew should act anyway and grumble in character when the driver doesn't answer · owner:claude
 - #7 Confirm the hands-free answer window (chime + 12 s) works on the phone · owner:claude · safety
 - #8 Confirm Vex (male) and Chet the ship (female) voices on the phone · owner:claude
+- #11 Parked bridge stays up while creeping at 2–8 km/h (from the #10 review) · owner:claude · safety · shared-file
 - #9 Build workflow: trigger on `build/**`, publish APKs as Releases · area:build · needs approval
 
 ## Ownership
