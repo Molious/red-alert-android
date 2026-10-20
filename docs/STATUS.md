@@ -13,7 +13,7 @@ Whoever finishes a task updates this file in the same PR.
 
 ## In review (for 1.0.29)
 - #20 Voice commands by voice only, mis-hearings, always a spoken reply (+ #7 answer-window fixes) · PR #24 · Linux Claude · safety · approved after the lunch fix
-- #25 Open mic for the whole drive · PR #26 merged · follow-up: steady mic indicator, no chatter on screen · PR (this) · Linux Claude · needs review · Cory: 30-min battery drive, chatter test
+- #25 Open mic for the whole drive · PR #26 merged · follow-up: steady mic indicator, no chatter on screen · PR #27 · Linux Claude · needs review · Cory: 30-min battery drive, chatter test
 - #4 Crew act anyway and grumble · PR #16 · Claudette · approved by Linux Claude (re-review)
 - #6 Bridge key bar · PR #10 (draft) · Chet · landscape 7-key size fix, bundle, tests, screenshots
 
