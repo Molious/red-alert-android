@@ -1,0 +1,37 @@
+name: Task
+description: One fix or feature for Claude or Chet. Cory adds the approved label before work starts.
+labels: ["status:proposed"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What's wrong or missing. Link the field test Issue if it came from one.
+    validations:
+      required: true
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Owner
+      options: ["Claude", "Chet", "Cory decides"]
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Files in scope
+      description: Name any shared files (navLayoutPatch.ts, simulator.css) here so the other agent knows.
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Something testable, ideally on the phone or by a test.
+    validations:
+      required: true
+  - type: dropdown
+    id: safety
+    attributes:
+      label: Touches driving, GPS, navigation, mic or driver interaction?
+      options: ["No", "Yes (add the safety label)"]
+    validations:
+      required: true

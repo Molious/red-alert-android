@@ -1,0 +1,42 @@
+name: Field test report
+description: Raw notes from a drive. File it once you're parked; never while driving.
+title: "Field test: 1.0.__ on <date>"
+labels: ["type:field-test"]
+body:
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      placeholder: "1.0.27"
+    validations:
+      required: true
+  - type: input
+    id: when
+    attributes:
+      label: Date, time and route
+      placeholder: "2026-10-20 morning, school run + home"
+  - type: textarea
+    id: notes
+    attributes:
+      label: What happened (raw notes, in order)
+      description: Voice notes pasted as-is are fine. Claude triages them into task Issues.
+    validations:
+      required: true
+  - type: textarea
+    id: areas
+    attributes:
+      label: By area (optional)
+      value: |
+        Mic / voice commands:
+        GPS and navigation:
+        Cockpit and map visuals:
+        Story, crew and voices:
+        Crashes or freezes:
+  - type: textarea
+    id: safety
+    attributes:
+      label: Anything that distracted you or felt unsafe
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
