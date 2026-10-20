@@ -63,3 +63,27 @@ test('a session that keeps ending instantly with nothing heard backs off too',as
   assert.ok(x.listens.slice(1).some(l=>l.open),'listening in open-mic mode between questions');
  }finally{x.dom.window.close();}
 });
+
+// #25 follow-up: the open mic restarts after every phrase; the indicator must not flash, and passengers'
+// words must not appear on screen.
+test('the mic indicator stays steady across restarts, and chatter never appears on screen',async()=>{
+ let next=null;const x=await game({onListen:(cb)=>{next=cb;}});
+ const until=async(f,ms=4000)=>{const e=Date.now()+ms;while(Date.now()<e){if(f())return true;await wait(10);}return false;};
+ // Answer the current listen session (a crew line can cancel one mid-test; its callback is then stale).
+ const say=async(text,done)=>{for(let i=0;i<8;i++){const k=x.listens.length;await until(()=>next);next(text,null);if(await until(()=>done(k),600))return true;}return false;};
+ try{
+  await until(()=>next);x.advance(20000);next(null,'no-speech');await until(()=>x.listens.length>=2); // offer window over
+  const d=x.dom.window.document,btn=d.querySelector('.navigation-strip [data-action=voice]'),status=d.querySelector('.voice-status');
+  const seen={btn:[btn.textContent],status:[status.textContent]};
+  new x.dom.window.MutationObserver(()=>{if(seen.btn.at(-1)!==btn.textContent)seen.btn.push(btn.textContent);if(seen.status.at(-1)!==status.textContent)seen.status.push(status.textContent);}).observe(d.body,{subtree:true,childList:true,characterData:true});
+  const spokeBefore=x.lines.length;
+  for(const c of ['so anyway','what about lunch','turn the radio up','okay','did you see that'])await say(c,k=>x.listens.length>k);
+  const crewLines=x.lines.length-spokeBefore;
+  assert.ok(seen.btn.length-1<=2*crewLines,`button changed ${seen.btn.length-1}× over 5 restarts (only pausing for ${crewLines} crew line(s) may change it)`);
+  assert.ok(seen.status.every(t=>!/lunch|radio|anyway|did you see/.test(t)),'passengers\' words never shown');
+  assert.ok(await say('repeat',()=>seen.status.includes('Heard: “repeat”')),'a real command is shown');
+  assert.ok(await until(()=>seen.btn.includes('Mic on')),'paused while the reply is spoken');
+  assert.ok(await until(()=>btn.textContent==='Mic listening'),'listening again afterwards');
+  btn.click();assert.ok(await until(()=>btn.textContent==='Mic off'),'switching it off shows');
+ }finally{x.dom.window.close();}
+});
