@@ -1,9 +1,14 @@
 name: Build APK
+# Release candidates: push a build/mole-beyond-1.0.N branch and the APK is attached to a DRAFT GitHub
+# Release (v1.0.N). Cory approves it by pressing "Publish release". Any other branch can be built on demand from the Actions tab
+# ("Run workflow"); those test APKs are attached to the run only, never released.
+# The version comes from app.json, so this file doesn't change between versions.
 on:
   push:
-    branches: [main, build/mole-beyond-1.0.27]
+    branches: ['build/**']
     paths-ignore:
       - 'artifacts/**'
+      - 'docs/**'
   workflow_dispatch:
 permissions:
   contents: write
@@ -17,22 +22,22 @@ jobs:
     env:
       CI: '1'
       EXPO_NO_TELEMETRY: '1'
-      BUILD_BRANCH: build/mole-beyond-1.0.27
     steps:
       - uses: actions/checkout@v4
-      - name: Publish build-start reference
-        if: github.ref_name == 'build/mole-beyond-1.0.27'
+      - name: Read version from app.json
         run: |
-          mkdir -p artifacts
           python - <<'PY'
-          import json,os,pathlib
-          pathlib.Path('artifacts/build-1.0.27-status.json').write_text(json.dumps({'state':'running','version':'1.0.27','source_commit':os.environ['GITHUB_SHA'],'run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
+          import json,os,subprocess
+          app=json.load(open('app.json'))['expo']
+          ref=os.environ['GITHUB_REF_NAME'];release=ref.startswith('build/')
+          # A build branch must match the version inside the app, or it would overwrite another version's release.
+          assert not release or ref.endswith('-'+app['version']),f"Branch {ref} doesn't match app.json version {app['version']}: bump the version first"
+          sha=subprocess.check_output(['git','rev-parse','--short','HEAD'],text=True).strip()
+          name=f"MoleBeyond-{app['version']}-arm64" if release else f"MoleBeyond-{app['version']}-test-{sha}-arm64"
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write(f"APP_VERSION={app['version']}\nVERSION_CODE={app['android']['versionCode']}\nAPK_NAME={name}\nIS_RELEASE={'true' if release else 'false'}\n")
+          print('Building',name,'from',ref)
           PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add artifacts/build-1.0.27-status.json
-          git commit -m 'Record Android APK build start [skip ci]'
-          git push origin HEAD:refs/heads/$BUILD_BRANCH
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -96,16 +101,17 @@ jobs:
       - name: Verify APK and prepare download
         run: |
           mkdir -p artifacts
-          cp android/app/build/outputs/apk/release/app-release.apk artifacts/MoleBeyond-1.0.27-arm64.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs artifacts/MoleBeyond-1.0.27-arm64.apk > artifacts/APK-VERIFICATION.txt
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/MoleBeyond-1.0.27-arm64.apk > artifacts/APK-METADATA.txt
-          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 artifacts/MoleBeyond-1.0.27-arm64.apk
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/$APK_NAME.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs artifacts/$APK_NAME.apk > artifacts/APK-VERIFICATION.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/$APK_NAME.apk > artifacts/APK-METADATA.txt
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 artifacts/$APK_NAME.apk
           python - <<'PY'
           import pathlib,hashlib,json,os,zipfile
-          p=pathlib.Path('artifacts/MoleBeyond-1.0.27-arm64.apk')
+          v,code,name=os.environ['APP_VERSION'],os.environ['VERSION_CODE'],os.environ['APK_NAME']
+          p=pathlib.Path(f'artifacts/{name}.apk')
           assert p.stat().st_size<100*1024*1024,'APK exceeds GitHub per-file download limit'
           metadata=pathlib.Path('artifacts/APK-METADATA.txt').read_text()
-          for s in ["name='com.molious.molebeyondtest'","versionName='1.0.27'","versionCode='28'","native-code: 'arm64-v8a'"]:
+          for s in ["name='com.molious.molebeyondtest'",f"versionName='{v}'",f"versionCode='{code}'","native-code: 'arm64-v8a'"]:
               assert s in metadata,s
           source=pathlib.Path('src/hybridHtml.ts').read_text()
           html=json.loads(source.removeprefix('export default ').strip().removesuffix(';'))
@@ -114,31 +120,37 @@ jobs:
               bundle=z.read('assets/index.android.bundle')
               assert html.encode() in bundle or html.encode('utf-16-le') in bundle,'Latest game document missing from compiled APK'
           digest=hashlib.sha256(p.read_bytes()).hexdigest()
-          pathlib.Path('artifacts/MoleBeyond-1.0.27-arm64.apk.sha256').write_text(digest+'  '+p.name+'\n')
-          pathlib.Path('artifacts/build-1.0.27-status.json').write_text(json.dumps({'state':'success','version':'1.0.27','version_code':28,'apk':p.name,'sha256':digest,'bytes':p.stat().st_size,'source_commit':os.environ['GITHUB_SHA'],'signing':'template debug/test key','physical_device_tested':False,'run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
+          pathlib.Path(f'artifacts/{name}.apk.sha256').write_text(digest+'  '+p.name+'\n')
+          pathlib.Path(f'artifacts/build-{v}-status.json').write_text(json.dumps({'state':'success','version':v,'version_code':int(code),'release':os.environ['IS_RELEASE']=='true','apk':p.name,'sha256':digest,'bytes':p.stat().st_size,'source_commit':os.environ['GITHUB_SHA'],'signing':'template debug/test key','physical_device_tested':False,'run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: MoleBeyond-1.0.27-arm64
-          path: artifacts/
+          name: ${{ env.APK_NAME }}
+          # Only this build's files; artifacts/ also holds APKs committed by older builds.
+          path: |
+            artifacts/${{ env.APK_NAME }}.apk
+            artifacts/${{ env.APK_NAME }}.apk.sha256
+            artifacts/APK-VERIFICATION.txt
+            artifacts/APK-METADATA.txt
+            artifacts/build-${{ env.APP_VERSION }}-status.json
           if-no-files-found: error
-      - name: Publish verified APK on the build branch
-        if: github.ref_name == 'build/mole-beyond-1.0.27'
+      - name: Prepare draft Release for Cory's approval (build branches only)
+        if: env.IS_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # The workflow only ever makes a DRAFT release. Drafts are visible to repo owners only; the APK is not
+        # released until Cory presses "Publish release" on GitHub. A version Cory has already published is
+        # never overwritten: bump the version instead.
         run: |
-          git add artifacts/
-          git commit -m 'Publish verified Mole Beyond 1.0.27 APK [skip ci]'
-          git push origin HEAD:refs/heads/$BUILD_BRANCH
-      - name: Publish failure reference
-        if: failure() && github.ref_name == 'build/mole-beyond-1.0.27'
-        run: |
-          mkdir -p artifacts
-          if [ -f /tmp/mole-sdk-setup.log ]; then cp /tmp/mole-sdk-setup.log artifacts/sdk-setup.log; fi
-          if [ -f apk-build.log ]; then cp apk-build.log artifacts/apk-build.log; fi
-          python - <<'PY'
-          import json,os,pathlib
-          pathlib.Path('artifacts').mkdir(exist_ok=True)
-          pathlib.Path('artifacts/build-1.0.27-status.json').write_text(json.dumps({'state':'failed','version':'1.0.27','run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
-          PY
-          git add artifacts/
-          git commit -m 'Record Android build failure [skip ci]'
-          git push origin HEAD:refs/heads/$BUILD_BRANCH
+          tag="v$APP_VERSION"
+          files="artifacts/$APK_NAME.apk artifacts/$APK_NAME.apk.sha256 artifacts/APK-VERIFICATION.txt artifacts/build-$APP_VERSION-status.json"
+          notes="DRAFT for Cory's approval. Mole Beyond $APP_VERSION (versionCode $VERSION_CODE) from \`$GITHUB_REF_NAME\` at $GITHUB_SHA. Test build signed with the template key; not yet field tested. Build log: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if draft=$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null); then
+            if [ "$draft" != "true" ]; then
+              echo "::error::$tag is already published by Cory. Bump the version in app.json and build a new branch."; exit 1
+            fi
+            gh release upload "$tag" $files --clobber
+            gh release edit "$tag" --notes "$notes (rebuilt)"
+          else
+            gh release create "$tag" $files --target "$GITHUB_SHA" --title "Mole Beyond $APP_VERSION" --notes "$notes" --draft --prerelease
+          fi
