@@ -39,7 +39,8 @@ export function installCockpit({engine,controller,audio,crewVoices,aiCrew}){
   if(event){get('[data-event-title]').textContent=event.character+' · '+event.type;get('[data-event-text]').textContent=event.text;const key=event.id+':'+s.parked;if(shownEvent!==key){shownEvent=key;get('[data-event-actions]').replaceChildren();for(const action of event.actions||[]){const b=document.createElement('button');b.textContent=action;b.dataset.action=action;b.disabled=!s.parked;get('[data-event-actions]').append(b);}const b=document.createElement('button');b.textContent='Let crew handle it';b.dataset.action='delegate';get('[data-event-actions]').append(b);}}
   get('[data-action="station"]').setAttribute('aria-pressed',String(station.isOpen()));station.render();
   get('[data-limit]').textContent=Number.isFinite(s.speedLimit)?s.speedLimit:'—';get('[data-safety]').textContent=Number.isFinite(s.safety)?s.safety:'—';
-  get('[data-action="crew"]').hidden=!!s.journey&&['navigating','launching','recalculating'].includes(s.journey.phase);
+  // Issue #6: show Crew on the stopped compact bridge, but preserve its moving-journey restriction.
+  get('[data-action="crew"]').hidden=!!s.journey&&['navigating','launching','recalculating'].includes(s.journey.phase)&&viewport.dataset.bridge!=='compact';
   const done=(s.journey?.completedEventIds||[]).find(id=>id.endsWith(':salvage'));if(done&&!salvageShown.has(done)){salvageShown.add(done);if(s.journey.phase==='navigating')playSalvage();}
   combat.update(s);
   roadMap?.update(s);
