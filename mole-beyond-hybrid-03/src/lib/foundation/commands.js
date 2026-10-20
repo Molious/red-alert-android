@@ -33,7 +33,8 @@ const PHRASES={
  collect:['collect','collect salvage','collect it','collect the salvage','collected','salvage','grab it','pick it up','bring it in','collect the pod','grab the pod'],
  repair:['repair','repairs','repair it','repair the shields','fix it','fix the shields','do the repairs','repaired'],
  // driving
- launch:['launch','launched','launching','lunch','launch now','engage','lets go','let us go','take off','lift off','blast off','punch it','launch the ship'],
+ // Launch phrases must be the whole utterance (never picked out of a sentence: "what about lunch").
+ launch:['launch','launched','launching','launch now','launch the ship','engage','take off','lift off','blast off'],
  repeat:['repeat','repeat that','repeat direction','repeat directions','repeat the direction','repeat the directions','say again','say that again','come again','what was that','pardon','sorry what','what did you say','next turn','where do i go','directions','direction','what next','repeat please','re peat','repeat instruction','repeat the instruction'],
  mute:['mute','mute audio','mute it','mute sound','pause audio','stop audio','quiet','be quiet','go quiet','silence','shut up','stop talking','shush','sound off','audio off','mute the crew','mute everything'],
  unmute:['unmute','un mute','unmute audio','sound on','audio on','resume audio','enable voice','voice on','talk to me','unmute the crew'],
@@ -64,11 +65,13 @@ const IN_CONTEXT={
  scan:['can','scam','skan','stan','span','scanner','okay','ok','go ahead','do it','yes'],
  collect:['correct','connect','collector','take it','okay','ok','go ahead','do it','yes','get it'],
  repair:['reaper','rapier','prepare','okay','ok','go ahead','do it','yes'],
+ // Only while a launch is expected (route ready, parked): everyday words otherwise.
+ launch:['lunch','lets go','let us go','punch it','lets launch','go go go'],
  cancel:['yes','yeah','yep','confirm','cancel','cancel it','do it','end it'],
  keep:['no','nope','keep going','dont','do not','never mind','nevermind','carry on','continue'],
 };
 
-const FILLER=/^(?:uh+|um+|er+m?|ah+|hmm+|oh|okay so|ok so|so|well|hey|right|alright then|please|captain|cap|computer|ship|chet|wraith|max|vex|silas|bastion|guys|team|crew,)\s+/;
+const FILLER=/^(?:uh+|um+|er+m?|ah+|hmm+|oh|okay so|ok so|okay|ok|so|well|hey|right|alright then|please|captain|cap|computer|ship|chet|wraith|max|vex|silas|bastion|guys|team|crew,)\s+/;
 const TRAIL=/\s+(?:please|thanks|thank you|now|captain|cap|mate|for me|then|chet|wraith|max|vex|silas|bastion)$/;
 
 export function normalizeSpeech(text){
@@ -135,7 +138,7 @@ export function matchVoice(text,context={}){
  // Only one kind of command may appear, and never the destructive ones.
  if(words.length<=8&&!/\b(dont|do not|not|never)\b/.test(s)){
   const found=new Set();
-  for(const [phrase,t] of PHRASE_TYPE){if(phrase.length<4||['cancel','home','destination','confirm','yes','no'].includes(t))continue;if((' '+s+' ').includes(' '+phrase+' '))found.add(t);}
+  for(const [phrase,t] of PHRASE_TYPE){if(phrase.length<4||['cancel','home','destination','confirm','yes','no','launch'].includes(t))continue;if((' '+s+' ').includes(' '+phrase+' '))found.add(t);}
   if(found.size===2&&found.has('accept')&&found.has('accept-contract'))found.delete('accept');
   if(found.size===2&&found.has('decline')&&found.has('decline-contract'))found.delete('decline');
   const ANSWERS=['accept','decline','defend','evade','delegate','acknowledge','scan','collect','repair'];
@@ -145,7 +148,7 @@ export function matchVoice(text,context={}){
  // Sound-alike guess, only among the answers being waited for, only for short replies.
  if(expect.length&&words.length<=3){
   const candidates=[];
-  for(const t of expect){const key=t==='delegate'?null:t;if(!key)continue;
+  for(const t of expect){const key=['delegate','launch','cancel','keep'].includes(t)?null:t;if(!key)continue; // launch has its own explicit near-misses
    for(const w of words){if(w.length<3)continue;const d=editDistance(w,key),k=editDistance(soundKey(w),soundKey(key));if(d<=2&&w.length>=4||k===0&&w.length>=4)candidates.push({t,score:d+k});}}
   candidates.sort((a,b)=>a.score-b.score);
   if(candidates.length&&(candidates.length===1||candidates[0].t===candidates[1].t||candidates[0].score<candidates[1].score))return {action:{type:candidates[0].t},via:'fuzzy'};

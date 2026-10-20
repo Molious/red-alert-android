@@ -32,7 +32,8 @@ const TABLE=[
  ['resume',{},['resume navigation','resume','start GPS','continue','keep going']],
  ['retry',{},['retry route','try again','reroute','recalculate']],
  ['recenter',{},['recenter','recentre','centre the map','where am I']],
- ['launch',{},['launch','lunch','launched','engage','let\'s go','take off']],
+ ['launch',{},['launch','launched','engage','take off','okay, launch','launch the ship please']],
+ ['launch',{expect:['launch']},['launch','lunch','let\'s go','let us go','punch it','okay lets go']],
  ['cancel',{},['cancel journey','cancel the journey','end trip','abort','stop navigation']],
  ['save',{},['save','save game']],
  ['home',{},['main menu']],
@@ -72,6 +73,14 @@ test('safety: destructive commands are never guessed, and answers only count for
  assert.equal(type('don\'t cancel the journey'),null,'negation is never acted on');
  assert.equal(type('accept and decline',OFFER),null,'two answers at once: ask again');
  assert.equal(type('destination'),'destination');
+});
+
+test('lunch is not a launch: slang counts only when a launch is expected, and never inside a sentence',()=>{
+ for(const ctx of [{},{expect:['launch']},{expect:['accept','decline']}])
+  for(const p of ['what about lunch','let\'s go get lunch','go get some lunch','I had lunch with mum','lunch was good','let\'s go home','punch it in the face','we should launch the dinghy later'])
+   assert.equal(type(p,ctx),null,`${JSON.stringify(p)} ${JSON.stringify(ctx)}`);
+ for(const p of ['lunch','let\'s go','let us go','punch it'])assert.equal(type(p),null,`${p} with no launch expected`);
+ assert.deepEqual(expectedAnswers({journey:{phase:'route_ready'}}),['launch'],'route ready: launch is the expected answer');
 });
 
 test('while confirming a cancel, only yes/no style answers count',()=>{

@@ -4,7 +4,7 @@
 import {matchVoice} from './commands.js';
 
 const NAV_PHASES=['navigating','launching','recalculating','signal_lost'];
-const ANSWERS={accept:'accept',decline:'decline',defend:'defend',evade:'evade',delegate:'let crew handle it',acknowledge:'acknowledge',scan:'scan',collect:'collect',repair:'repair',cancel:'yes',keep:'no'};
+const ANSWERS={launch:'launch',accept:'accept',decline:'decline',defend:'defend',evade:'evade',delegate:'let crew handle it',acknowledge:'acknowledge',scan:'scan',collect:'collect',repair:'repair',cancel:'yes',keep:'no'};
 
 // Short confirmations for commands where the crew don't already say something.
 const CONFIRM={
@@ -19,6 +19,8 @@ export function expectedAnswers({journey,pendingCancel=false,asked=null}={}){
  if(asked?.length)return [...asked];
  const event=journey?.activeEvent;
  if(event?.actions?.length)return [...event.actions,'delegate'];
+ // Route ready and parked: "Say launch when parked." (lets "let's go" count, #24 review)
+ if(journey?.phase==='route_ready')return ['launch'];
  return [];
 }
 /** "Say defend, evade, or let crew handle it." */
