@@ -11,7 +11,7 @@ Whoever finishes a task updates this file in the same PR.
 - **Last field test:** 2026-10-20 on 1.0.27 · Issue #2
 
 ## In review (for 1.0.29)
-- #21 Crew introduction and contract depart lines dropped at launch · PR #22 · Linux Claude · needs review
+- #21 Crew introduction and contract depart lines dropped at launch · PR #23 · Linux Claude · needs review
 - #4 Crew act anyway and grumble · PR #16 · Claudette · changes requested (offer flag + Max's line); rebase on #21 once merged
 - #6 Bridge key bar · PR #10 (draft) · Chet · landscape 7-key size fix, bundle, tests, screenshots
 
