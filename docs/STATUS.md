@@ -12,7 +12,7 @@ Whoever finishes a task updates this file in the same PR.
 - **Last field test:** 2026-10-20 on 1.0.27 · Issue #2
 
 ## In review (for 1.0.29)
-- #20 Voice commands by voice only, mis-hearings, always a spoken reply (+ #7 answer-window fixes) · PR (this) · Linux Claude · safety · needs review
+- #20 Voice commands by voice only, mis-hearings, always a spoken reply (+ #7 answer-window fixes) · PR #24 · Linux Claude · safety · needs review
 - #4 Crew act anyway and grumble · PR #16 · Claudette · rebasing on #21 with review fixes; Linux Claude re-reviews
 - #6 Bridge key bar · PR #10 (draft) · Chet · landscape 7-key size fix, bundle, tests, screenshots
 
