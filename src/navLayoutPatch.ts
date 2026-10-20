@@ -122,7 +122,8 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-bridge=compact] .road-status:not(.mole-alert){display:none}
 .live-cockpit .viewport[data-bridge=compact] .crew-comms{background:linear-gradient(90deg,#04101ce0,#04101c80 70%,#04101c00);border-left:2px solid #c4a3ec;border-radius:0 6px 6px 0;margin:0 0 6px}
 .live-cockpit .viewport[data-bridge=compact] .crew-comms span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.live-cockpit .viewport[data-bridge=compact] .flight-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+/* Issue #6: keep every visible compact-bridge key on one row (including MENU). */
+.live-cockpit .viewport[data-bridge=compact] .flight-actions{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none;gap:4px}
 .live-cockpit .viewport[data-bridge=compact] .flight-actions button{display:none}
 .live-cockpit .viewport[data-bridge=compact] .flight-actions button:is([data-action=destination],[data-action=station],[data-action=crew],.tray-toggle),
 .live-cockpit .viewport[data-bridge=compact] .flight-actions button:is([data-action=launch],[data-action=cancel],[data-action=repeat]):not(:disabled),
