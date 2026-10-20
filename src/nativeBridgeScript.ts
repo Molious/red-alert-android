@@ -1,7 +1,8 @@
 // Injected into the Red Alert page. It defines `window.RedAlertNative` (version 1), the API the web app
 // already looks for in src/lib/native/useNativeBridge.js:
 //
-//   listenOnce(done(text|null, error|null)) -> id     one spoken command, then the mic closes
+//   listenOnce(done(text|null, error|null), {open}?) -> id   one spoken command, then the mic closes;
+//                                                     open:true = the always-on mic between questions (#25)
 //   cancelListen(id)
 //   speak(text, {pitch, rate}?), hush()                SEXTANT's voice through Android text-to-speech
 //   speakRequest(text, done(outcome), {pitch, rate}?) -> id, cancelSpeech(id)
@@ -41,7 +42,7 @@ export const nativeBridgeScript = `
     cancelPreparation: function(id){delete preparations[id];post('session.cancel',id);},
     setAudioMuted: function(value){value=!!value;if(audioMuted===value)return;audioMuted=value;post('audio.state',0,{muted:value});},
     announce: function () { post('bridge.ready', 0); window.dispatchEvent(new CustomEvent('red-alert-native-ready')); },
-    listenOnce: function (done) { var id = ++serial; listens[id] = done; post('voice.listen', id); return id; },
+    listenOnce: function (done, opts) { var id = ++serial; listens[id] = done; post('voice.listen', id, opts && opts.open === true ? { open: true } : {}); return id; },
     cancelListen: function (id) { delete listens[id]; post('voice.cancel', id); },
     speak: function (text, opts) { emit('speak'); currentSpeech = ++serial; post('speech.say', currentSpeech, voice(text, opts)); },
     speakRequest: function (text, done, opts) { var id=++serial; speeches[id]=done; currentSpeech=id; emit('speak'); post('speech.say',id,voice(text,opts)); return id; },

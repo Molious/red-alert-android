@@ -169,6 +169,6 @@ test('panels open only while parked; mic off and help by voice',async()=>{
  const parked=rig({phase:'arrived'});await parked.vc.handle('market',null);await parked.vc.handle('crew',null);assert.deepEqual(parked.opened,['station','crew']);
  await parked.vc.handle('main menu',null);assert.deepEqual(parked.opened,['station','crew','home']);
  const busy=rig();await busy.vc.handle('main menu',null);assert.match(busy.texts()[0],/Cancel the journey before/);
- const off=rig();await off.vc.handle('stop listening',null);assert.equal(off.mic(),false);assert.equal(off.texts()[0],'Microphone off.');
+ const off=rig();await off.vc.handle('stop listening',null);assert.equal(off.mic(),false);assert.match(off.texts()[0],/^Microphone off\. I will listen again when the crew ask you something, or tap Mic\.$/);
  const help=rig();await help.vc.handle('what can I say',null);assert.match(help.texts()[0],/repeat, mute/);
 });

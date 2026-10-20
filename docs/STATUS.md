@@ -12,8 +12,9 @@ Whoever finishes a task updates this file in the same PR.
 - **Last field test:** 2026-10-20 on 1.0.27 · Issue #2
 
 ## In review (for 1.0.29)
-- #20 Voice commands by voice only, mis-hearings, always a spoken reply (+ #7 answer-window fixes) · PR #24 · Linux Claude · safety · needs review
-- #4 Crew act anyway and grumble · PR #16 · Claudette · rebasing on #21 with review fixes; Linux Claude re-reviews
+- #20 Voice commands by voice only, mis-hearings, always a spoken reply (+ #7 answer-window fixes) · PR #24 · Linux Claude · safety · approved after the lunch fix
+- #25 Open mic for the whole drive, no tap (strict matching, on-device recognition, loop guard) · PR #26 (on top of #24) · Linux Claude · safety · needs review + Cory's 30-min battery drive
+- #4 Crew act anyway and grumble · PR #16 · Claudette · approved by Linux Claude (re-review)
 - #6 Bridge key bar · PR #10 (draft) · Chet · landscape 7-key size fix, bundle, tests, screenshots
 
 ## Queued
@@ -48,4 +49,4 @@ Whoever finishes a task updates this file in the same PR.
 - `main` always matches the latest release Cory has published (Claudette updates it after each publish). Work happens on `build/mole-beyond-1.0.N`.
 - `src/hybridHtml.ts` is generated: after merging any game-source change, re-run `npm run bundle:hybrid` rather than hand-merging it.
 
-_Updated by Linux Claude, 2026-10-20 (#20)_
+_Updated by Linux Claude, 2026-10-20 (#25)_
