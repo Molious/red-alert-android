@@ -10,7 +10,7 @@ export function createRoadServices({fetch:fetcher=globalThis.fetch,native=global
    if(signal?.aborted){reject(Error('Search cancelled'));return;}
    let settled=false,id;const finish=(err,result)=>{if(settled)return;settled=true;clearTimeout(timer);signal?.removeEventListener('abort',abort);if(err){if(id!==undefined)bridge.cancelSearch?.(id);reject(err);}else resolve(result);};const abort=()=>finish(Error('Search cancelled'));
    const timer=setTimeout(()=>finish(Error('Address lookup timed out. Try again.')),15000);signal?.addEventListener('abort',abort,{once:true});
-   try{id=bridge.searchAddress(text,(results,error)=>{if(error){finish(Error(error));return;}const found=(Array.isArray(results)?results:[]).filter(coordinates).slice(0,5).map(p=>({...p,label:typeof p.label==='string'&&p.label.trim()?p.label.slice(0,200):text+' · '+p.lat.toFixed(4)+', '+p.lng.toFixed(4)}));if(!found.length)finish(Error('No address found. Include suburb and country.'));else finish(null,found);});}catch(e){finish(e);}
+   try{id=bridge.searchAddress(text,(results,error)=>{if(error){finish(Error(error));return;}const found=(Array.isArray(results)?results:[]).filter(coordinates).slice(0,5).map(p=>({...p,label:typeof p.label==='string'&&p.label.trim()?p.label.slice(0,200):text+' · '+p.lat.toFixed(4)+', '+p.lng.toFixed(4),approximate:p.approximate===true}));if(!found.length)finish(Error('No address found. Include suburb and country.'));else finish(null,found);});}catch(e){finish(e);}
   });},
   // Posted speed limit near a position, from OpenStreetMap (Overpass). Null when unknown.
   async speedLimit(p,signal){
