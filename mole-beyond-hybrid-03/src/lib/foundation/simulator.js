@@ -14,7 +14,7 @@ import {createAiCrew} from './ai-crew.js';
 export const crewVoices=createCrewVoices({storage:globalThis.localStorage});
 let answerUntil=0,view,controller,aiCrew,watch=null,nativeWatch=false,watchEpoch=0,listening=null,listenEpoch=0,recognition=null,started=false,gpsBlocked=false,preparation=null,boardEpoch=0,handsFree=false,speechPlaying=0,micRetry=null,micPermitted=true,voice,lastState=null,windowChimed=false,windowLeft=0,windowTimer=null,openMic=false,micDelay=300,listenStarted=0;
 // Open mic (#25): on for the whole drive without a tap; pauses while anyone speaks; strict matching outside questions.
-const micGuard=createMicGuard();const clock=()=>globalThis.performance?.now?.()??Date.now();
+let cinematicPlaying=false;const micGuard=createMicGuard();const clock=()=>globalThis.performance?.now?.()??Date.now();
 const native=()=>window.RedAlertNative;
 function play(item,signal){view?.caption(item);if(signal.aborted)return Promise.resolve();if(answerUntil&&!item.ask)windowLeft=Math.max(windowLeft,answerUntil-Date.now());stopMic(true);speechPlaying++;return new Promise(resolve=>{
  let timer,id,utterance,settled=false;const done=outcome=>{if(settled)return;settled=true;clearTimeout(timer);signal.removeEventListener('abort',cancel);speechPlaying=Math.max(0,speechPlaying-1);if(outcome==='failed')view?.listening('Device speech unavailable. Check the installed speech service.');if(item.ask&&outcome!=='cancelled'&&micPermitted&&!signal.aborted){openMic=true;handsFree=true;answerUntil=Date.now()+12000;windowChimed=false;windowLeft=0;voice?.asking(item.expect||(lastState?.journey?.activeEvent?null:['accept','decline']));view?.micState(true,false);view?.listening('Listening for your answer… '+answerHint(voice?.context().expect||[]));}
@@ -25,7 +25,7 @@ function play(item,signal){view?.caption(item);if(signal.aborted)return Promise.
  else if(window.speechSynthesis&&window.SpeechSynthesisUtterance){utterance=new SpeechSynthesisUtterance(item.text);utterance.lang='en-AU';utterance.rate=.98;utterance.pitch=item.character==='VEX'?.8:item.character==='WRAITH'?.95:1;utterance.onend=done;utterance.onerror=done;window.speechSynthesis.speak(utterance);}else done();
  });}
 const audio=createDialogueQueue({play});
-function scheduleMic(){clearTimeout(micRetry);if(!globalThis.document)return;if(handsFree&&answerUntil&&Date.now()>answerUntil){closeWindow();return;}if(!started||!handsFree||!micPermitted||speechPlaying||preparation!==null||!controller?.snapshot().active||document.hidden)return;micRetry=setTimeout(()=>{if(!globalThis.document)return;if(started&&handsFree&&!speechPlaying&&controller.snapshot().active&&!document.hidden)listen();},micDelay);micDelay=300;}
+function scheduleMic(){clearTimeout(micRetry);if(!globalThis.document)return;if(handsFree&&answerUntil&&Date.now()>answerUntil){closeWindow();return;}if(!started||!handsFree||!micPermitted||speechPlaying||cinematicPlaying||preparation!==null||!controller?.snapshot().active||document.hidden)return;micRetry=setTimeout(()=>{if(!globalThis.document)return;if(started&&handsFree&&!speechPlaying&&!cinematicPlaying&&controller.snapshot().active&&!document.hidden)listen();},micDelay);micDelay=300;}
 function closeWindow(){answerUntil=0;handsFree=openMic;windowLeft=0;clearTimeout(windowTimer);voice?.endQuestion();view?.micState(handsFree,false);view?.listening(openMic?'Listening for commands':'Microphone off');if(openMic)scheduleMic();}
 function stopMic(preserve=false){if(!preserve)handsFree=false;clearTimeout(micRetry);listenEpoch++;if(listening!==null){native()?.cancelListen?.(listening);listening=null;}recognition?.abort();recognition=null;view?.micState(handsFree,false);}
 function stopGPS(){watchEpoch++;if(watch!==null){if(nativeWatch)native()?.clearWatch(watch);else navigator.geolocation?.clearWatch(watch);watch=null;}}
@@ -62,7 +62,10 @@ function listen(){if(listening!==null||recognition||!handsFree||speechPlaying)re
  const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Recognition){view?.listening('Voice recognition unavailable. Use dashboard controls.');return;}recognition=new Recognition();recognition.lang='en-AU';recognition.continuous=false;recognition.interimResults=false;recognition.onresult=e=>{if(epoch===listenEpoch)handleVoice(e.results[0][0].transcript,null);};recognition.onerror=e=>{if(epoch===listenEpoch)handleVoice(null,e.error);};recognition.onend=()=>{recognition=null;view?.micState(handsFree,false);scheduleMic();};try{recognition.start();view?.listening('Listening for a command…');}catch(e){handleVoice(null,e.message);}}
 try{
  const engine=createMissionEngine({storage:localStorage,live:true});
- controller=createJourneyController({engine,services:createRoadServices({native}),audio,onChange:s=>{lastState=s;view?.render(s);syncNative(s);},onLaunch:done=>playLaunch({container:document.querySelector('.viewport'),onFinish:done})});
+ controller=createJourneyController({engine,services:createRoadServices({native}),audio,onChange:s=>{lastState=s;view?.render(s);syncNative(s);},onLaunch:done=>{
+  // #19/#25: the open mic would hear the cinematic's soundtrack; pause it until the video ends or is stopped.
+  cinematicPlaying=true;stopMic(true);const resume=()=>{cinematicPlaying=false;scheduleMic();};
+  return playLaunch({container:document.querySelector('.viewport'),onFinish:()=>{resume();done();},onCancel:resume});}});
  aiCrew=createAiCrew({native,engine,audio,storage:globalThis.localStorage});
  voice=createVoiceControl({command:a=>controller.command(a),snapshot:()=>controller.snapshot(),
   state:()=>{const snap=engine.snapshot();return {journey:lastState?.journey??snap.journey,muted:!!lastState?.muted,results:!!lastState?.results?.length,offer:!snap.contracts?.active&&!!contractOffer(snap)};},
