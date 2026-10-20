@@ -32,7 +32,8 @@
           "speechRecognitionPermission": "Allow Red Alert to recognise your spoken commands."
         }
       ],
-      "./plugins/withTrustedWebView.cjs"
+      "./plugins/withTrustedWebView.cjs",
+      "./plugins/withSpeechRecovery.cjs"
     ],
     "owner": "molious",
     "extra": {
