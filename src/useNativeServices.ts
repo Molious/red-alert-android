@@ -11,6 +11,7 @@ import {createRecognitionGate} from './recognitionGate';
 import {createSessionPreparation} from './sessionPreparation';
 import {createSpeechSession,waitForCaptureSpeech,createAudioSwitch} from './speechSession';
 import { pickLanguage, pickRecognitionService, MAX_LISTEN_MS } from './voicePolicy';
+import { isApproximatePin } from './addressPolicy';
 import {assignCrewVoices,crewVoiceFor,crewVoiceList,type CrewVoice,type DeviceVoice,type VoiceOption} from './crewVoices';
 
 // The native side of window.RedAlertNative: voice commands, SEXTANT's voice and GPS.
@@ -322,11 +323,12 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
       const points=await Location.geocodeAsync(m.text!);const results=[];
       for(const p of points.slice(0,5)){
         if(document.current!==m.doc||!active.current)return;
-        let label=m.text!+' · '+p.latitude.toFixed(4)+', '+p.longitude.toFixed(4);
+        let label=m.text!+' · '+p.latitude.toFixed(4)+', '+p.longitude.toFixed(4),found:string|null|undefined;
         try{const [address]=await Location.reverseGeocodeAsync({latitude:p.latitude,longitude:p.longitude});
-          if(address)label=[address.streetNumber,address.street,address.city||address.district,address.region,address.postalCode,address.country].filter(Boolean).join(' ').slice(0,200)||label;
+          if(address){found=address.streetNumber;label=[address.streetNumber,address.street,address.city||address.district,address.region,address.postalCode,address.country].filter(Boolean).join(' ').slice(0,200)||label;}
         }catch{}
-        results.push({lat:p.latitude,lng:p.longitude,label});
+        // Issue #5: the phone's geocoder can drop the house number and return the middle of the street.
+        results.push({lat:p.latitude,lng:p.longitude,label,approximate:isApproximatePin(m.text!,found)});
       }
       send(m,'geo.results',{results});
     }catch{send(m,'geo.results',{results:[],error:'Address lookup unavailable. Try a full street address, suburb and country.'});}})();}
