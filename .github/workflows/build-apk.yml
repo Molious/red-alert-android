@@ -1,6 +1,6 @@
 name: Build APK
-# Release candidates: push a build/mole-beyond-1.0.N branch and the APK is published as a GitHub
-# Release (v1.0.N, marked pre-release). Any other branch can be built on demand from the Actions tab
+# Release candidates: push a build/mole-beyond-1.0.N branch and the APK is attached to a DRAFT GitHub
+# Release (v1.0.N). Cory approves it by pressing "Publish release". Any other branch can be built on demand from the Actions tab
 # ("Run workflow"); those test APKs are attached to the run only, never released.
 # The version comes from app.json, so this file doesn't change between versions.
 on:
@@ -128,17 +128,23 @@ jobs:
           name: ${{ env.APK_NAME }}
           path: artifacts/
           if-no-files-found: error
-      - name: Publish GitHub Release (build branches only)
+      - name: Prepare draft Release for Cory's approval (build branches only)
         if: env.IS_RELEASE == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+        # The workflow only ever makes a DRAFT release. Drafts are visible to repo owners only; the APK is not
+        # released until Cory presses "Publish release" on GitHub. A version Cory has already published is
+        # never overwritten: bump the version instead.
         run: |
           tag="v$APP_VERSION"
           files="artifacts/$APK_NAME.apk artifacts/$APK_NAME.apk.sha256 artifacts/APK-VERIFICATION.txt artifacts/build-$APP_VERSION-status.json"
-          notes="Mole Beyond $APP_VERSION (versionCode $VERSION_CODE) from \`$GITHUB_REF_NAME\` at $GITHUB_SHA. Test build signed with the template key; not yet field tested. Build log: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          if gh release view "$tag" >/dev/null 2>&1; then
+          notes="DRAFT for Cory's approval. Mole Beyond $APP_VERSION (versionCode $VERSION_CODE) from \`$GITHUB_REF_NAME\` at $GITHUB_SHA. Test build signed with the template key; not yet field tested. Build log: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if draft=$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null); then
+            if [ "$draft" != "true" ]; then
+              echo "::error::$tag is already published by Cory. Bump the version in app.json and build a new branch."; exit 1
+            fi
             gh release upload "$tag" $files --clobber
             gh release edit "$tag" --notes "$notes (rebuilt)"
           else
-            gh release create "$tag" $files --target "$GITHUB_SHA" --title "Mole Beyond $APP_VERSION" --notes "$notes" --prerelease
+            gh release create "$tag" $files --target "$GITHUB_SHA" --title "Mole Beyond $APP_VERSION" --notes "$notes" --draft --prerelease
           fi
