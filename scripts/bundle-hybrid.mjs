@@ -1,7 +1,7 @@
 import {build} from 'esbuild';
 import {readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
-const root=path.resolve(process.argv[2]||'../mole-beyond-hybrid-03');
+const root=path.resolve(process.argv.slice(2).find(a=>!a.startsWith('--'))||'mole-beyond-hybrid-03');
 const foundation=path.join(root,'src/lib/foundation');
 const portraits={};
 for(const id of ['mags','vex','wraith','silas','bastion'])portraits[id]='data:image/webp;base64,'+(await readFile(path.join(foundation,`red-alert/pilots/${id}-narrative.webp`))).toString('base64');
@@ -18,6 +18,8 @@ html=html.replace(/<script type="module"[^>]+><\/script>/,()=>`<script>${js.outp
 html=html.replace('</head>',"<script>(function(){var failed=false;function report(type,message){try{window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify({channel:'hybrid-boot-v1',type:type,message:String(message||'').slice(0,400)}));}catch(e){}}window.addEventListener('error',function(e){failed=true;report('error',e.message||'Game startup failed');});window.addEventListener('unhandledrejection',function(e){failed=true;report('error',e.reason&&e.reason.message||e.reason||'Game startup failed');});window.addEventListener('DOMContentLoaded',function(){if(!failed)report(document.querySelector('.opening-shell')?'ready':'error',document.querySelector('.opening-shell')?'':'Opening menu did not initialize');});})();</script>"+'</head>');
 console.log('Document bytes',Buffer.byteLength(html));
 if(Buffer.byteLength(html)>4*1024*1024)throw new Error('Offline game exceeded 4 MiB startup budget. Optimize assets before building.');
-await writeFile('src/hybridHtml.ts','export default '+JSON.stringify(html)+';\n');
+const out='export default '+JSON.stringify(html)+';\n';
+if(process.argv.includes('--check')){const current=await readFile('src/hybridHtml.ts','utf8');if(current!==out)throw new Error('src/hybridHtml.ts is out of date with mole-beyond-hybrid-03. Run: node scripts/bundle-hybrid.mjs');console.log('Bundled game matches source.');process.exit(0);}
+await writeFile('src/hybridHtml.ts',out);
 console.log(`Bundled offline cockpit, scripts and five portraits (${Buffer.byteLength(html)} bytes).`);
 

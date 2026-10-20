@@ -82,7 +82,7 @@ test('injected bridge matches the API the Red Alert web app calls', () => {
   const ready = [];
   const pid = b.prepareSession((r) => ready.push(r));
   b.receive({ channel: CHANNEL, doc, id: pid, type: 'session.ready', speechReady: true, locationGranted: true, microphoneGranted: false });
-  assert.deepEqual(JSON.parse(JSON.stringify(ready)), [{ speechReady: true, locationGranted: true, microphoneGranted: false }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(ready)), [{ speechReady: true, locationGranted: true, microphoneGranted: false, voices: [], crew: {} }]);
   const found = [];
   const qid = b.searchAddress('12 Queen St', (r, e) => found.push([r, e]));
   b.receive({ channel: CHANNEL, doc, id: qid, type: 'geo.results', results: [{ label: 'x' }] });
@@ -146,5 +146,7 @@ test('newer session, journey, audio and search messages are accepted alongside p
   let voice;
   const session = createSpeechSession({ speak: (_t, _c, v) => { voice = v; }, stop: () => {}, send: () => {} });
   await session.say({ id: 1, doc: 'document1', text: 'Lock on?', pitch: 1.3, rate: 0.9 });
-  assert.deepEqual(voice, { pitch: 1.3, rate: 0.9 });
+  assert.deepEqual(voice, { pitch: 1.3, rate: 0.9, character: undefined });
+  await session.say({ id: 2, doc: 'document1', text: 'Weapons hot', character: 'VEX' });
+  assert.equal(voice.character, 'VEX');
 });

@@ -1,6 +1,6 @@
 {
   "name": "mole-beyond-hybrid-test",
-  "version": "1.0.0",
+  "version": "1.0.28",
   "main": "index.ts",
   "dependencies": {
     "expo": "~57.0.27",
@@ -10,6 +10,7 @@
     "expo-speech-recognition": "57.1.1",
     "expo-status-bar": "~57.0.1",
     "leaflet": "1.9.4",
+    "maplibre-gl": "5.24.0",
     "react": "19.2.3",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
@@ -18,13 +19,16 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "esbuild": "^0.28.2",
+    "geojson-vt": "5.0.4",
     "jsdom": "^26.1.0",
-    "typescript": "~6.0.3"
+    "playwright-core": "1.58.2",
+    "typescript": "~6.0.3",
+    "vt-pbf": "3.1.3"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs && node --test mole-beyond-hybrid-03/tests/*.test.js",
     "typecheck": "tsc --noEmit",
     "bundle:hybrid": "node scripts/bundle-hybrid.mjs"
   },

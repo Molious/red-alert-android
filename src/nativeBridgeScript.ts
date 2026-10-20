@@ -18,7 +18,7 @@ export const nativeBridgeScript = `
   if (window.RedAlertNative) { window.RedAlertNative.announce(); return; }
   var channel = 'red-alert-native-v1';
   var doc = String(Date.now()) + '-' + Math.random().toString(36).slice(2);
-  var serial = 0, listens = {}, searches = {}, speeches = {}, currentSpeech = 0, journeyActive = false, audioMuted = false, preparations = {}, watches = {}, events = { speak: [], hush: [] };
+  var serial = 0, listens = {}, searches = {}, speeches = {}, currentSpeech = 0, journeyActive = false, audioMuted = false, preparations = {}, crewAsks = {}, watches = {}, events = { speak: [], hush: [] };
   function post(type, id, extra) {
     window.ReactNativeWebView.postMessage(JSON.stringify(Object.assign({ channel: channel, doc: doc, type: type, id: id }, extra || {})));
   }
@@ -27,6 +27,8 @@ export const nativeBridgeScript = `
     var extra = { text: String(text).slice(0, 2000) };
     if (opts && typeof opts.pitch === 'number') extra.pitch = opts.pitch;
     if (opts && typeof opts.rate === 'number') extra.rate = opts.rate;
+    if (opts && typeof opts.character === 'string' && /^[A-Z]{2,12}$/.test(opts.character)) extra.character = opts.character;
+    if (opts && typeof opts.voice === 'string' && /^[\w#.\-]{1,100}$/.test(opts.voice)) extra.voice = opts.voice;
     return extra;
   }
   function emit(name) {
@@ -34,6 +36,7 @@ export const nativeBridgeScript = `
   }
   window.RedAlertNative = {
     version: 1,
+    askCrew: function(p,done){var id=++serial;crewAsks[id]=done;post('ai.ask',id,{key:String(p&&p.key||'').slice(0,200),system:String(p&&p.system||'').slice(0,4000),text:String(p&&p.text||'').slice(0,2000)});return id;},
     prepareSession: function(done){var id=++serial;preparations[id]=done;post('session.prepare',id);return id;},
     cancelPreparation: function(id){delete preparations[id];post('session.cancel',id);},
     setAudioMuted: function(value){value=!!value;if(audioMuted===value)return;audioMuted=value;post('audio.state',0,{muted:value});},
@@ -53,7 +56,8 @@ export const nativeBridgeScript = `
     removeEventListener: function (name, fn) { if (events[name]) events[name] = events[name].filter(function (f) { return f !== fn; }); },
     receive: function (m) {
       if (!m || m.channel !== channel || m.doc !== doc) return;
-      if(m.type==='session.ready'){var ready=preparations[m.id];delete preparations[m.id];if(ready)ready({speechReady:!!m.speechReady,locationGranted:!!m.locationGranted,microphoneGranted:!!m.microphoneGranted});}
+      if(m.type==='ai.reply'){var ask=crewAsks[m.id];delete crewAsks[m.id];if(ask)ask(typeof m.answer==='string'?m.answer:null,typeof m.error==='string'?m.error:null);}
+      if(m.type==='session.ready'){var ready=preparations[m.id];delete preparations[m.id];if(ready)ready({speechReady:!!m.speechReady,locationGranted:!!m.locationGranted,microphoneGranted:!!m.microphoneGranted,voices:Array.isArray(m.voices)?m.voices:[],crew:m.crew&&typeof m.crew==='object'?m.crew:{}});}
       else if (m.type === 'geo.results') { var search = searches[m.id]; if(search) {delete searches[m.id];search(m.results || [],m.error || null);} } else if (m.type === 'voice.started') {
         window.dispatchEvent(new Event('test-mic-ready'));
       } else if (m.type === 'voice.result') {

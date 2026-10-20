@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import * as Speech from 'expo-speech';
+// expo-speech's native module, for resetEngine() added by plugins/withSpeechRecovery.cjs (issue #3).
+import ExpoSpeechNative from 'expo-speech/build/ExponentSpeech';
 import * as Location from 'expo-location';
 import {activateKeepAwakeAsync,deactivateKeepAwake} from 'expo-keep-awake';
 import { ExpoSpeechRecognitionModule as Recognition, useSpeechRecognitionEvent } from 'expo-speech-recognition';
@@ -11,6 +13,8 @@ import {createRecognitionGate} from './recognitionGate';
 import {createSessionPreparation} from './sessionPreparation';
 import {createSpeechSession,waitForCaptureSpeech,createAudioSwitch} from './speechSession';
 import { pickLanguage, pickRecognitionService, MAX_LISTEN_MS } from './voicePolicy';
+import { isApproximatePin } from './addressPolicy';
+import {assignCrewVoices,crewVoiceFor,crewVoiceList,type CrewVoice,type DeviceVoice,type VoiceOption} from './crewVoices';
 
 // The native side of window.RedAlertNative: voice commands, SEXTANT's voice and GPS.
 //
@@ -203,11 +207,22 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     if (alive.current) setPhase('off');
   });
 
+  // Each crew member gets their own installed voice (see crewVoices.ts), worked out once per session.
+  const crewVoices=useRef<Record<string,CrewVoice>|null>(null);const voiceOptions=useRef<VoiceOption[]>([]);
+  const loadCrewVoices=async()=>{try{const v=await Speech.getAvailableVoicesAsync();crewVoices.current=assignCrewVoices(v as DeviceVoice[]);voiceOptions.current=crewVoiceList(v as DeviceVoice[]);return v;}catch{return [];}};
   // Request-correlated speech: an old Android completion cannot finish a newer line.
   const speechSession = useRef<ReturnType<typeof createSpeechSession> | null>(null);
   if(!speechSession.current)speechSession.current=createSpeechSession({
-    speak:(text,callbacks,voice)=>Speech.speak(text,{language:'en-AU',rate:voice.rate??.98,pitch:voice.pitch??.85,...callbacks}),
-    stop:()=>Speech.stop(),send:(r,outcome)=>send(r,'speech.end',{outcome})
+    speak:(text,callbacks,voice)=>{const cv=crewVoiceFor(crewVoices.current,voice.character,voice.voice,voiceOptions.current);const base={language:cv.language,rate:voice.rate??cv.rate,pitch:voice.pitch??cv.pitch};
+      // A chosen voice can fail (e.g. not downloaded); fall back to the default voice rather than going silent.
+      if(!cv.voice){Speech.speak(text,{...base,...callbacks});return;}
+      Speech.speak(text,{...base,voice:cv.voice,onStart:callbacks.onStart,onDone:callbacks.onDone,onStopped:callbacks.onStopped,onError:()=>Speech.speak(text,{...base,...callbacks})});},
+    stop:()=>Speech.stop(),send:(r,outcome)=>send(r,'speech.end',{outcome}),
+    // A line that never starts means the phone's speech engine connection is gone (usually after the screen
+    // was off): rebuild it and retry once, and tell the game so the driver can see it happened.
+    isSpeaking:()=>Speech.isSpeakingAsync(),
+    recover:()=>typeof ExpoSpeechNative?.resetEngine==='function'?ExpoSpeechNative.resetEngine():undefined,
+    onRecover:r=>{console.info('SPEECH','engine restart',r.id);if(alive.current&&document.current===r.doc)web.current?.injectJavaScript("window.dispatchEvent(new CustomEvent('hybrid-voice',{detail:{state:'restarted'}})); true;");}
   });
   const stopSpeech = (id=0) => { speechSession.current?.cancel(id); };
   const speak = (r:Message) => {cancelVoice();if(!active.current||audioSwitch.current?.isMuted()){send(r,'speech.end',{outcome:'cancelled'});return;}void speechSession.current?.say(r);};
@@ -216,7 +231,19 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   if(!audioSwitch.current)audioSwitch.current=createAudioSwitch({stop:()=>stopSpeech(),changed:setAudioMuted,notify:value=>web.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('hybrid-audio',{detail:{muted:${value}}})); true;`)});
   const setAudioPaused=(value:boolean)=>audioSwitch.current?.set(value);
   const preparation=useRef<ReturnType<typeof createSessionPreparation>|null>(null);
-  if(!preparation.current)preparation.current=createSessionPreparation({permission:()=>Location.requestForegroundPermissionsAsync(),microphone:()=>Recognition.requestPermissionsAsync(),voices:()=>Speech.getAvailableVoicesAsync(),isActive:()=>active.current,isCurrent:r=>alive.current&&document.current===r.doc,send:(r,result)=>send(r,'session.ready',result)});
+  if(!preparation.current)preparation.current=createSessionPreparation({permission:()=>Location.requestForegroundPermissionsAsync(),microphone:()=>Recognition.requestPermissionsAsync(),voices:()=>loadCrewVoices(),isActive:()=>active.current,isCurrent:r=>alive.current&&document.current===r.doc,send:(r,result)=>send(r,'session.ready',{...result,voices:voiceOptions.current,crew:Object.fromEntries(Object.entries(crewVoices.current||{}).map(([k,v])=>[k,v.voice||'']))})});
+
+  // ---------- AI crew (optional, driver's own Anthropic key) ----------
+  const askCrew=async(r:Message)=>{
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':String(r.key),'anthropic-version':'2023-06-01'},
+        body:JSON.stringify({model:'claude-haiku-5-5',max_tokens:300,system:r.system,messages:[{role:'user',content:r.text}]})});
+      const data=await res.json().catch(()=>null);
+      if(!res.ok){send(r,'ai.reply',{error:res.status===401?'The API key was rejected. Check it in the Crew panel.':res.status===429?'Too many requests. Give it a minute.':'AI service error '+res.status+'.'});return;}
+      const answer=Array.isArray(data?.content)?data.content.filter((c:{type?:string})=>c?.type==='text').map((c:{text?:string})=>c.text||'').join('\n'):'';
+      send(r,'ai.reply',answer?{answer:answer.slice(0,4000)}:{error:'No answer came back.'});
+    }catch{send(r,'ai.reply',{error:'No internet connection for the AI crew.'});}
+  };
 
   // ---------- GPS ----------
   const clearWatch = (id: number) => {
@@ -294,6 +321,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     if (m.type === 'voice.listen') void listen(m);
     if (m.type === 'voice.cancel' && capture.current?.request.id === m.id) cancelVoice();
     if (m.type === 'speech.say') speak(m);
+    if (m.type === 'ai.ask') void askCrew(m);
     if (m.type === 'speech.cancel') stopSpeech(m.id);
     if (m.type === 'geo.search') { void (async()=>{try {
       const permission=await Location.getForegroundPermissionsAsync();
@@ -302,11 +330,12 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
       const points=await Location.geocodeAsync(m.text!);const results=[];
       for(const p of points.slice(0,5)){
         if(document.current!==m.doc||!active.current)return;
-        let label=m.text!+' · '+p.latitude.toFixed(4)+', '+p.longitude.toFixed(4);
+        let label=m.text!+' · '+p.latitude.toFixed(4)+', '+p.longitude.toFixed(4),found:string|null|undefined;
         try{const [address]=await Location.reverseGeocodeAsync({latitude:p.latitude,longitude:p.longitude});
-          if(address)label=[address.streetNumber,address.street,address.city||address.district,address.region,address.postalCode,address.country].filter(Boolean).join(' ').slice(0,200)||label;
+          if(address){found=address.streetNumber;label=[address.streetNumber,address.street,address.city||address.district,address.region,address.postalCode,address.country].filter(Boolean).join(' ').slice(0,200)||label;}
         }catch{}
-        results.push({lat:p.latitude,lng:p.longitude,label});
+        // Issue #5: the phone's geocoder can drop the house number and return the middle of the street.
+        results.push({lat:p.latitude,lng:p.longitude,label,approximate:isApproximatePin(m.text!,found)});
       }
       send(m,'geo.results',{results});
     }catch{send(m,'geo.results',{results:[],error:'Address lookup unavailable. Try a full street address, suburb and country.'});}})();}
@@ -317,20 +346,31 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   useEffect(() => {
     alive.current = true;
     // This prototype is foreground-only: location, microphone and speech stop together.
+    // Android briefly reports the app as not active when the speech recogniser grabs the mic. Treating
+    // that as "app in background" stopped GPS and navigation every time the mic opened (the map stopped
+    // following and the route had to be recalculated). Now: ignore it while the mic is listening, and
+    // only treat the app as backgrounded if it stays away for 2 seconds.
+    let away: ReturnType<typeof setTimeout> | null = null, backgrounded = false;
+    const goBackground=()=>{away=null;backgrounded=true;const preparing=preparation.current?.pending();active.current=false;
+      if(!preparing)web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-background')); true;");
+      cancelVoice();stopSpeech();clearAllWatches();setAwake(false);};
     const sub = AppState.addEventListener('change', (s) => {
-      console.info('APPSTATE',s);const preparing=preparation.current?.pending();
-      active.current = s === 'active';
-      if (!active.current) {
-        if(!preparing)web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-background')); true;");
-        cancelVoice();
-        stopSpeech();
-        clearAllWatches();
-        setAwake(false);
-      }else{if(preparing)preparation.current?.foreground();else web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-foreground')); true;");}
+      console.info('APPSTATE',s);
+      if (s === 'active') {
+        if (away) { clearTimeout(away); away = null; }
+        if (!backgrounded) return;
+        backgrounded = false; active.current = true;
+        const preparing=preparation.current?.pending();
+        if(preparing)preparation.current?.foreground();else web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-foreground')); true;");
+        return;
+      }
+      if (capture.current || away || backgrounded) return;
+      away = setTimeout(goBackground, 2000);
     });
     return () => {
       alive.current = false;
       reset();
+      if (away) clearTimeout(away);
       sub.remove();
     };
   }, []);
