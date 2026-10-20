@@ -283,7 +283,9 @@ export const navLayoutScript = `(function(){
   if(view)new MutationObserver(bridgeSync).observe(view,{attributes:true,attributeFilter:['class','data-nav-mode']});
   function sync(){
    var p=(phase&&phase.textContent||'').trim().toLowerCase();var on=PHASES.indexOf(p)>=0&&!(parkedView&&p!=='launching');if(view)view.dataset.stopped=parkedView&&PHASES.indexOf(p)>=0?'true':'false';
-   var want=on?'on':'off';if(view&&view.dataset.navMode!==want){var was=view.dataset.navMode;view.dataset.navMode=want;if(!was&&!on)return;if(!on){dash.classList.remove('tray-open');var b=dash.querySelector('.tray-toggle');if(b){b.textContent='More controls';b.setAttribute('aria-expanded','false');}}setTimeout(resize,50);}
+   var want=on?'on':'off';if(view&&view.dataset.navMode!==want){var was=view.dataset.navMode;view.dataset.navMode=want;if(!was&&!on)return;if(on){/* Issue #6 safety: close parked-only panels before driving navigation resumes. */
+    ['.crew-panel','.station-panel'].forEach(function(sel){var panel=dash.querySelector(sel);if(panel&&!panel.hidden){var close=panel.querySelector('[data-close]');if(close)close.click();else panel.hidden=true;}});
+   }if(!on){dash.classList.remove('tray-open');var b=dash.querySelector('.tray-toggle');if(b){b.textContent='More controls';b.setAttribute('aria-expanded','false');}}setTimeout(resize,50);}
   }
   if(phase)new MutationObserver(sync).observe(phase,{childList:true,characterData:true,subtree:true});
   var status=dash.querySelector('.road-status');
