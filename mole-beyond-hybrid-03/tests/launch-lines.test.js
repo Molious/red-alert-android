@@ -68,3 +68,16 @@ test('the introduction does not play again on the next launch',async()=>{
  await x.board();await x.launch();await x.drive(15);
  assert.equal(x.prologue().length,ALL.length,'second launch: no repeat');
 });
+
+// #4 with the real queue: board → hear the offer → confirm → launch without answering.
+test('with the real queue, an unanswered offer is taken at launch and Max is actually heard saying so',async()=>{
+ const x=setup();await x.board();
+ assert.ok(x.spoken.some(l=>l.id.includes(':offer')),'the offer itself was heard');
+ assert.ok(!x.engine.snapshot().contracts?.active,'nothing loaded before launch');
+ await x.launch();await x.drive(25);
+ const id=x.engine.snapshot().contracts?.active?.id;assert.ok(id,'Max took the job');
+ const line=x.spoken.find(l=>l.id===`contract:${id}:accepted`);
+ assert.ok(line,'Max\'s line actually played');assert.equal(line.character,'MAX');assert.equal(line.ask,true,'opens the hands-free answer window');
+ await x.c.command({type:'decline'});await wait(30);
+ assert.equal(x.engine.snapshot().contracts.active,null,'saying decline hands it back');
+});
