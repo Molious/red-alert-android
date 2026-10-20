@@ -37,6 +37,9 @@ jobs:
           with open(os.environ['GITHUB_ENV'],'a') as f:
               f.write(f"APP_VERSION={app['version']}\nVERSION_CODE={app['android']['versionCode']}\nAPK_NAME={name}\nIS_RELEASE={'true' if release else 'false'}\n")
           print('Building',name,'from',ref)
+          # #38: stamp the commit into the app bar so two APKs with the same version can be told apart.
+          assert "export const BUILD_SHA: string = 'dev';" in open('src/buildInfo.ts').read(), 'src/buildInfo.ts changed shape'
+          open('src/buildInfo.ts','w').write(f"// Stamped by the build workflow (#38).\nexport const BUILD_SHA: string = '{sha}';\n")
           PY
       - uses: actions/setup-node@v4
         with:
