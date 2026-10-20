@@ -65,6 +65,28 @@ test('a wrong turn far from the destination still re-routes',()=>{
  assert.ok(off);
 });
 
+// GPS drift at a red light (Chet's case): the position wanders 50 m sideways off the road line.
+const drift=(m,t,acc)=>({lat:50*DEG,lng:m*DEG,accuracy:acc,speed:0,heading:null,ts:t});
+for(const acc of [35,22])test(`a red light 100 m short with GPS drifting 50 m sideways at ${acc} m accuracy does not arrive`,()=>{
+ const g=createGuidance(straight(),{revision:1});let t=drive(g,{to:2900});
+ let arrived=false;for(let s=0;s<90;s++){t+=1000;arrived=arrived||g.update(drift(2900,t,acc),t).arrived;}
+ assert.equal(arrived,false);
+});
+
+test('a destination across a highway from the route still re-routes a wrong turn',()=>{
+ // Route: east 2 km, north 120 m, west to x=0, north 300 m, east 200 m, south 300 m to (200,120): the end sits
+ // right beside the westbound leg, but about 1 km away by road from x=300 on that leg.
+ const c=[],pt=(x,y)=>c.push([x*DEG,y*DEG]);for(let x=0;x<=2000;x+=100)pt(x,0);for(let y=40;y<=120;y+=40)pt(2000,y);for(let x=1900;x>=0;x-=100)pt(x,120);for(let y=220;y<=420;y+=100)pt(0,y);for(let x=100;x<=200;x+=100)pt(x,420);for(let y=320;y>=120;y-=100)pt(200,y);
+ const total=2000+120+2000+300+200+300,end=[200*DEG,120*DEG];
+ const r=parseRoadRoute({code:'Ok',routes:[{geometry:{type:'LineString',coordinates:c},distance:total,duration:total/10,legs:[{steps:[{maneuver:{type:'depart',location:[0,0]},name:'A',distance:total},{maneuver:{type:'arrive',location:end},distance:0}]}]}]});
+ const g=createGuidance(r,{revision:1});let t=100000;const go=(x,y,heading)=>{t+=1000;return g.update({lat:y*DEG,lng:x*DEG,accuracy:6,speed:13,heading,ts:t},t);};
+ for(let x=0;x<=2000;x+=13)go(x,0,90);for(let y=13;y<=120;y+=13)go(2000,y,0);for(let x=1990;x>=300;x-=13)go(x,120,270);
+ assert.ok(g.snapshot().remainingMeters>800,'far from the end by road');
+ // Wrong turn south at x=300, which is only ~100 m from the end in a straight line.
+ let seconds=0,off=false;for(let y=107;y>=-200&&!off;y-=13){seconds++;off=go(300,y,180).offRoute;}
+ assert.ok(off&&seconds<=7,`re-routed after ${seconds}s, while still within ~150 m of the end`);
+});
+
 test('a pin far from where the road ends is called out before setting off',()=>{
  const road=straight();
  assert.equal(pinWarning({lat:0,lng:3000*DEG,label:'Home'},road),'');

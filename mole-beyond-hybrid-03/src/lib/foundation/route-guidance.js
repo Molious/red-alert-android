@@ -35,8 +35,9 @@ export function createGuidance(route,{revision=1,destination=null}={}){
   // which at the phone's 1-second GPS rate never reached 2.5 s, so wrong turns were rarely re-routed.)
   if(outside){if(offSince===null)offSince=p.ts;}else{offSince=null;progress=Math.max(progress,best.at);segment=best.index;}
   // Within 150 m of the destination, leaving the road line is expected (driveway, car park), so it is not
-  // treated as a wrong turn: re-routing there would restart guidance at the kerb.
-  const end=route.points.at(-1),dEnd=meters([p.lat,p.lng],end),dPin=pin?meters([p.lat,p.lng],pin):Infinity,nearEnd=Math.min(dEnd,dPin)<=150&&progress>=total*.5;
+  // treated as a wrong turn: re-routing there would restart guidance at the kerb. It must also be within
+  // 300 m by road, so a destination just across a highway or river from the route still re-routes.
+  const end=route.points.at(-1),dEnd=meters([p.lat,p.lng],end),dPin=pin?meters([p.lat,p.lng],pin):Infinity,nearEnd=Math.min(dEnd,dPin)<=150&&progress>=total*.5&&total-progress<=300;
   const offRoute=offSince!==null&&p.ts-offSince>=2500&&!nearEnd;
   last=p;recent.push(p);recent=recent.slice(-4);
   const next=route.steps.find(s=>s.type!=='depart'&&s.atMeters>=progress-15)||route.steps.at(-1);
@@ -51,8 +52,9 @@ export function createGuidance(route,{revision=1,destination=null}={}){
   const arrivalOK=p.accuracy<=40&&still&&(Math.min(dEnd,dPin)<=40&&progress>=total*.5||!outside&&remaining<=50&&dEnd<=60);
   if(arrivalOK){arrival.push(p.ts);arrival=arrival.slice(-2);}else arrival=[];
   // Parked for 30 s close to the destination also counts (#5), but only off the road line (driveway, car
-  // park) or within 60 m of the end of the route, so a red light 100 m short doesn't end the trip.
-  const parked=parkedEvidence(recent,now),parkedNear=parked&&Math.min(dEnd,dPin)<=120&&progress>=total*.5&&(outside||remaining<=60);
+  // park) or within 60 m of the end of the route, so a red light 100 m short doesn't end the trip. Off the
+  // road line only counts with a good fix (<= 20 m): poor GPS at a light can drift the position sideways.
+  const parked=parkedEvidence(recent,now),parkedNear=parked&&Math.min(dEnd,dPin)<=120&&progress>=total*.5&&(outside&&p.accuracy<=20||remaining<=60);
   if(parkedNear){if(parkedSince===null)parkedSince=p.ts;}else parkedSince=null;
   const arrived=arrival.length===2&&arrival[1]-arrival[0]>=1500||parkedSince!==null&&p.ts-parkedSince>=30000;
   state={valid:!outside,progressMeters:progress,remainingMeters:remaining,nextInstruction:current,distanceToTurn,nearTurn,turnSoon,arrived,offRoute,parked,cues};return snapshot();
