@@ -51,6 +51,7 @@ try{
  document.addEventListener('visibilitychange',()=>{if(document.hidden)background();else if(started&&preparation===null){gpsBlocked=false;controller.resume();}});window.addEventListener('hybrid-background',background);
  window.addEventListener('hybrid-audio',e=>{void controller.command({type:e.detail?.muted?'mute':'unmute'});});
  window.addEventListener('hybrid-stop',()=>{void controller.command({type:'mute'});});
+ window.addEventListener('hybrid-voice',e=>{if(e.detail?.state==='restarted')view?.listening('Voice engine restarted. Directions will keep speaking.');});
  window.addEventListener('hybrid-foreground',()=>{if(started&&preparation===null){gpsBlocked=false;controller.resume();view?.listening('App resumed. Tap Resume navigation for a fresh GPS fix.');}});
  window.addEventListener('pagehide',()=>{background();controller.dispose();view.dispose();});setInterval(()=>controller.tick(),1000);
 }catch(e){document.querySelector('#error').textContent=e.message;throw e;}

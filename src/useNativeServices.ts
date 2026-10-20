@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import * as Speech from 'expo-speech';
+// expo-speech's native module, for resetEngine() added by plugins/withSpeechRecovery.cjs (issue #3).
+import ExpoSpeechNative from 'expo-speech/build/ExponentSpeech';
 import * as Location from 'expo-location';
 import {activateKeepAwakeAsync,deactivateKeepAwake} from 'expo-keep-awake';
 import { ExpoSpeechRecognitionModule as Recognition, useSpeechRecognitionEvent } from 'expo-speech-recognition';
@@ -11,6 +13,7 @@ import {createRecognitionGate} from './recognitionGate';
 import {createSessionPreparation} from './sessionPreparation';
 import {createSpeechSession,waitForCaptureSpeech,createAudioSwitch} from './speechSession';
 import { pickLanguage, pickRecognitionService, MAX_LISTEN_MS } from './voicePolicy';
+import { isApproximatePin } from './addressPolicy';
 import {assignCrewVoices,crewVoiceFor,crewVoiceList,type CrewVoice,type DeviceVoice,type VoiceOption} from './crewVoices';
 
 // The native side of window.RedAlertNative: voice commands, SEXTANT's voice and GPS.
@@ -213,8 +216,13 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     speak:(text,callbacks,voice)=>{const cv=crewVoiceFor(crewVoices.current,voice.character,voice.voice,voiceOptions.current);const base={language:cv.language,rate:voice.rate??cv.rate,pitch:voice.pitch??cv.pitch};
       // A chosen voice can fail (e.g. not downloaded); fall back to the default voice rather than going silent.
       if(!cv.voice){Speech.speak(text,{...base,...callbacks});return;}
-      Speech.speak(text,{...base,voice:cv.voice,onDone:callbacks.onDone,onStopped:callbacks.onStopped,onError:()=>Speech.speak(text,{...base,...callbacks})});},
-    stop:()=>Speech.stop(),send:(r,outcome)=>send(r,'speech.end',{outcome})
+      Speech.speak(text,{...base,voice:cv.voice,onStart:callbacks.onStart,onDone:callbacks.onDone,onStopped:callbacks.onStopped,onError:()=>Speech.speak(text,{...base,...callbacks})});},
+    stop:()=>Speech.stop(),send:(r,outcome)=>send(r,'speech.end',{outcome}),
+    // A line that never starts means the phone's speech engine connection is gone (usually after the screen
+    // was off): rebuild it and retry once, and tell the game so the driver can see it happened.
+    isSpeaking:()=>Speech.isSpeakingAsync(),
+    recover:()=>typeof ExpoSpeechNative?.resetEngine==='function'?ExpoSpeechNative.resetEngine():undefined,
+    onRecover:r=>{console.info('SPEECH','engine restart',r.id);if(alive.current&&document.current===r.doc)web.current?.injectJavaScript("window.dispatchEvent(new CustomEvent('hybrid-voice',{detail:{state:'restarted'}})); true;");}
   });
   const stopSpeech = (id=0) => { speechSession.current?.cancel(id); };
   const speak = (r:Message) => {cancelVoice();if(!active.current||audioSwitch.current?.isMuted()){send(r,'speech.end',{outcome:'cancelled'});return;}void speechSession.current?.say(r);};
@@ -322,11 +330,12 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
       const points=await Location.geocodeAsync(m.text!);const results=[];
       for(const p of points.slice(0,5)){
         if(document.current!==m.doc||!active.current)return;
-        let label=m.text!+' · '+p.latitude.toFixed(4)+', '+p.longitude.toFixed(4);
+        let label=m.text!+' · '+p.latitude.toFixed(4)+', '+p.longitude.toFixed(4),found:string|null|undefined;
         try{const [address]=await Location.reverseGeocodeAsync({latitude:p.latitude,longitude:p.longitude});
-          if(address)label=[address.streetNumber,address.street,address.city||address.district,address.region,address.postalCode,address.country].filter(Boolean).join(' ').slice(0,200)||label;
+          if(address){found=address.streetNumber;label=[address.streetNumber,address.street,address.city||address.district,address.region,address.postalCode,address.country].filter(Boolean).join(' ').slice(0,200)||label;}
         }catch{}
-        results.push({lat:p.latitude,lng:p.longitude,label});
+        // Issue #5: the phone's geocoder can drop the house number and return the middle of the street.
+        results.push({lat:p.latitude,lng:p.longitude,label,approximate:isApproximatePin(m.text!,found)});
       }
       send(m,'geo.results',{results});
     }catch{send(m,'geo.results',{results:[],error:'Address lookup unavailable. Try a full street address, suburb and country.'});}})();}

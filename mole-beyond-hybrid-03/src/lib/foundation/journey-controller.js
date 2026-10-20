@@ -1,4 +1,4 @@
-import {validFix} from './navigation-core.js';
+import {validFix,meters} from './navigation-core.js';
 import {createGuidance,parkedEvidence} from './route-guidance.js';
 import {nextCrewEvent,resolveCrewEvent} from './journey-events.js';
 import {contractOffer,contractById} from './contracts.js';
@@ -7,6 +7,15 @@ import {PROLOGUE,nextChatter} from './bridge-chatter.js';
 import {createSafetyMeter,safetyBonus} from './safe-driving.js';
 import {grumble} from './crew-grumbles.js';
 const finished=j=>!j||['arrived','cancelled'].includes(j.phase);
+// Issue #5: a destination pin that isn't where the driver is going means arrival can never trigger.
+// Say so before setting off rather than at the kerb.
+const APPROXIMATE='Careful, Captain: that pin is approximate, not the exact house number you gave. Check it on the map before you confirm.';
+export function pinWarning(destination,route){
+ if(destination?.approximate)return 'That destination pin is approximate. Check it on the map.';
+ const end=route?.points?.at(-1);if(!end||!Number.isFinite(destination?.lat))return '';
+ const gap=meters(end,[destination.lat,destination.lng]);
+ return gap>150?`The road ends ${Math.round(gap/10)*10} metres from your pin. Check the pin on the map.`:'';
+}
 export function createJourneyController({engine,services,audio,now=Date.now,onChange=()=>{},onLaunch=done=>{done();return {cancel(){}}},id=()=>crypto.randomUUID()}){
  let active=false,disposed=false,fix=null,recent=[],route=null,guide=null,results=[],selected=null,status='Awaiting destination',generation=0,request=null,busy=false,cover=null,storyPaused=false,resumeNeeded=false,resumeRequested=false,lastRecalc=-Infinity,routeBase=0,lastRoadProgress=0,viewGuidance=null,signalAnnounced=false,muted=false,planning=false,lastCue='',lastOffered='',pendingOffer='',autoTaken='',grumbles=0,declined=0,lastSpokeAt=0,chatterGap=45000,eventAt=0,safety=null,limit=null,limitAt=-Infinity,limitPos=null,limitBusy=false,lastSafetySave=0,speedingNotedAt=-Infinity;
  const state=()=>engine.snapshot();const journey=()=>state().journey;
@@ -26,9 +35,10 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
   const j=journey();if(!j||finished(j))return;if(!validFix(fix,now())){status='Waiting for a current GPS fix before calculating the route.';emit();return;}
   const start={...fix};cancelRequest();const token=generation,controller=new AbortController();request=controller;busy=true;status=resuming?'Recalculating road route…':'Calculating road route…';audio.setStoryPaused(true);if(resuming)dispatch('live.phase',{phase:'recalculating'});emit();
   try{const r=await services.route(start,j.destination,controller.signal);if(disposed||!active||token!==generation)return;
-   const revision=journey().routeRevision+1;route=r;routeBase=journey().verifiedMeters;lastRoadProgress=0;guide=createGuidance(r,{revision});guide.update(start,start.ts);viewGuidance=fix.ts>start.ts?guide.update(fix,now()):guide.snapshot();
+   const revision=journey().routeRevision+1;route=r;routeBase=journey().verifiedMeters;lastRoadProgress=0;guide=createGuidance(r,{revision,destination:j.destination});guide.update(start,start.ts);viewGuidance=fix.ts>start.ts?guide.update(fix,now()):guide.snapshot();
    dispatch('live.route',{revision,distance:r.cumulativeMeters.at(-1),resuming});resumeNeeded=false;resumeRequested=false;signalAnnounced=false;status=`${(r.distance/1000).toFixed(1)} km · about ${Math.ceil(r.duration/60)} minutes · ${resuming?'guidance resumed':'ready to launch when parked'}`;
-   say(resuming?'Road route updated. '+guide.repeat():`Route ready to ${j.destination.label}. ${(r.distance/1000).toFixed(1)} kilometres. Say launch when parked.`);
+   const warning=resuming?'':pinWarning(j.destination,r);if(warning)status+=' · '+warning;
+   say(resuming?'Road route updated. '+guide.repeat():`Route ready to ${j.destination.label}. ${(r.distance/1000).toFixed(1)} kilometres. `+(warning?warning+' ':'')+'Say launch when parked.');
   }catch(e){if(token!==generation||disposed)return;route=null;guide=null;viewGuidance=null;status='Guidance unavailable. '+(e?.message||'Check internet and retry route.');if(!finished(journey()))dispatch('live.phase',{phase:'signal_lost'});resumeNeeded=resuming;say(status);}
   finally{if(token===generation){busy=false;request=null;emit();}}
  }
@@ -55,7 +65,7 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
      try{const found=await services.search(action.text,request.signal);if(token!==generation||!active||disposed)return;results=found;status='Choose an address result, then confirm the destination.';say(found.length+' destination '+(found.length===1?'match':'matches')+'. Choose an option and confirm the destination.');}
      catch(e){if(token===generation){status=e?.message||'Address lookup failed.';say(status);}}finally{if(token===generation){busy=false;request=null;emit();}}return;
     }
-    case 'select':if(!Number.isSafeInteger(action.index)||!results[action.index]){status='Choose an address result first.';break;}selected=results[action.index];status='Confirm '+selected.label;say('Destination option '+(action.index+1)+': '+selected.label+'. Confirm destination to use this address.');break;
+    case 'select':if(!Number.isSafeInteger(action.index)||!results[action.index]){status='Choose an address result first.';break;}selected=results[action.index];status='Confirm '+selected.label+(selected.approximate?' · approximate pin, check the map':'');say('Destination option '+(action.index+1)+': '+selected.label+'. '+(selected.approximate?APPROXIMATE+' ':'')+'Confirm destination to use this address.');break;
     case 'confirm':if(!selected){status='Choose an address result first.';break;}if(!finished(journey())){status='Cancel the current journey before changing destination.';break;}dispatch('live.destination',{id:id(),destination:selected});planning=false;results=[];if(!state().contracts?.active)offerContract();await loadRoute(false);return;
     case 'retry':if(!finished(journey())){resumeRequested=true;await loadRoute(journey().launched===true);}else status='Choose a destination first.';return;
     case 'launch':if(journey()?.phase!=='route_ready'||!route){status='Confirm a destination and calculate a route first.';break;}if(!parkedEvidence(recent,now())){status='Launch cinematic requires three accurate, low-speed GPS fixes while parked. Unknown speed does not count as parked.';break;}const unanswered=pendingOffer&&!state().contracts?.active&&contractOffer(state())?.id===pendingOffer;dispatch('live.launch');audio.setStoryPaused(true);say('Launching. Wraith has the road route.');if(unanswered)acceptContract(true);cover=onLaunch(finishLaunch);emit();return;
