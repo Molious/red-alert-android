@@ -46,6 +46,7 @@ Whoever finishes a task updates this file in the same PR.
 - `safety` label = touches driving, GPS, navigation, mic or driver interaction → the other agent reviews with the PR checklist, Cory gives final approval.
 - No secrets in Issues, PRs or code. The AI crew API key stays on the phone.
 - Never ask Cory to do anything while he's driving. Field-test notes get filed once he's parked.
+- `main` always matches the latest release Cory has published (Claudette updates it after each publish). Work happens on `build/mole-beyond-1.0.N`.
 - `src/hybridHtml.ts` is generated: after merging any game-source change, re-run `npm run bundle:hybrid` rather than hand-merging it.
 
 _Updated by Linux Claude, 2026-10-20 (#25)_
