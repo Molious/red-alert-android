@@ -47,8 +47,22 @@ test('arrival counts at the destination pin when the road ends short of it',()=>
 
 test('stopping at lights just before the destination does not end the journey',()=>{
  const g=createGuidance(straight(),{revision:1});let t=drive(g,{to:2900});
- let arrived=false;for(let s=0;s<25;s++){t+=1000;arrived=arrived||g.update(at(2900,t,0),t).arrived;}
- assert.equal(arrived,false,'25 s stopped 100 m short is not arrival');
+ let arrived=false;for(let s=0;s<90;s++){t+=1000;arrived=arrived||g.update(at(2900,t,0),t).arrived;}
+ assert.equal(arrived,false,'a 90 s red light 100 m short is not arrival');
+});
+
+test('parking in a car park beside the end of the route arrives and does not re-route',()=>{
+ const g=createGuidance(straight(),{revision:1});let t=drive(g,{to:2900});
+ let arrived=false,rerouted=false;
+ for(let s=0;s<45&&!arrived;s++){t+=1000;const r=g.update(at(2930,t,0,80),t);arrived=r.arrived;rerouted=rerouted||r.offRoute;}
+ assert.equal(rerouted,false,'no "off the planned route" at the destination');
+ assert.ok(arrived,'parked 80 m off the road near the end counts after 30 s');
+});
+
+test('a wrong turn far from the destination still re-routes',()=>{
+ const g=createGuidance(straight(),{revision:1});let t=drive(g,{to:2000,speed:13});
+ let off=false;for(let north=13;north<=300&&!off;north+=13){t+=1000;off=g.update(at(2000,t,13,north),t).offRoute;}
+ assert.ok(off);
 });
 
 test('a pin far from where the road ends is called out before setting off',()=>{
