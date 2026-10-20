@@ -7,6 +7,7 @@ import {createRoadServices} from './road-services.js';
 import {createJourneyController} from './journey-controller.js';
 import {installCockpit} from './cockpit-view.js';
 import {playLaunch} from './launch-scene.js';
+import {playOpening} from './opening-cinematic.js';
 import {createVoiceControl,answerHint,createMicGuard} from './voice-control.js';
 import {contractOffer} from './contracts.js';
 import {createCrewVoices} from './crew-voices.js';
@@ -69,7 +70,7 @@ function listen(){if(listening!==null||recognition||!handsFree||speechPlaying)re
 try{
  const engine=createMissionEngine({storage:localStorage,live:true});
  controller=createJourneyController({engine,services:createRoadServices({native}),audio,onChange:s=>{lastState=s;view?.render(s);syncNative(s);},onLaunch:done=>{
-  // #19/#25: the open mic would hear the cinematic's soundtrack; pause it until the video ends or is stopped.
+  // #25: pause the open mic during the launch animation's sound; it resumes when the animation ends or is stopped.
   cinematicPlaying=true;stopMic(true);const resume=()=>{cinematicPlaying=false;scheduleMic();};
   return playLaunch({container:document.querySelector('.viewport'),onFinish:()=>{resume();done();},onCancel:resume});}});
  aiCrew=createAiCrew({native,engine,audio,storage:globalThis.localStorage});
@@ -82,6 +83,8 @@ try{
   micOff:()=>{openMic=false;stopMic();}});
  view=installCockpit({engine,controller,audio,crewVoices,aiCrew});installSeatedCrew();
  installCrewScreens({engine,onEnter:()=>{started=true;const epoch=++boardEpoch;preparation=-1;showStatus('Preparing GPS, microphone and speech…');const ready=result=>{if(epoch!==boardEpoch||!started)return;preparation=null;gpsBlocked=result.locationGranted===false;micPermitted=result.microphoneGranted!==false;openMic=micPermitted;handsFree=openMic;micGuard.reset();crewVoices.setOptions(result.voices,result.crew);controller.enter();showMic(handsFree,false);if(openMic)scheduleMic();if(!result.speechReady)showStatus('Speech service did not report a ready voice. Check device speech settings if silent.');view.ready.then(()=>window.dispatchEvent(new Event('resize')));};if(native()?.prepareSession){const request=native().prepareSession(ready);if(preparation!==null)preparation=request;}else{window.speechSynthesis?.getVoices();window.speechSynthesis?.resume();ready({speechReady:true,locationGranted:true,microphoneGranted:true});}},onLeave:()=>{const j=engine.snapshot().journey;if(j&&!['arrived','cancelled'].includes(j.phase)){void controller.command({type:'home'});return false;}started=false;boardEpoch++;if(preparation!==null)native()?.cancelPreparation?.(preparation);preparation=null;stopMic();controller.background();return true;},onDemo:()=>{}});
+ // #19: the opening cinematic, once per app open, before the title and character select (never mid-drive).
+ playOpening({native:native(),journeyActive:()=>{const j=engine.snapshot().journey;return !!j&&!['arrived','cancelled'].includes(j.phase);}});
  const profile=document.querySelector('.captain-profile');profile.append(document.querySelector('.player-identity'),document.querySelector('.home-menu'));document.querySelector('.home-menu').hidden=true;
  window.addEventListener('cockpit-listen',()=>{openMic=!openMic;handsFree=openMic;answerUntil=0;micPermitted=true;micGuard.reset();showMic(handsFree,false);showStatus(openMic?'Listening for commands':'Microphone off');if(handsFree)scheduleMic();else stopMic();});window.addEventListener('cockpit-gps-retry',()=>{gpsBlocked=false;});
  window.addEventListener('test-mic-ready',()=>showStatus('Listening… say destination, launch, repeat direction, scan, defend, repair or cancel journey.'));
