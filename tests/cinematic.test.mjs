@@ -45,3 +45,23 @@ test('the opening cinematic plays once at app open, before character select, and
   assert.equal(x.plays.length,1,'launch uses the short launch animation, not the video');
  }finally{x.dom.window.close();}
 });
+
+// #30: launch must never wait for the cinematic, whatever state the video is in.
+test('launch is never gated by the opening video: a stuck video is stopped on boarding and launch proceeds',async()=>{
+ const x=await opened();try{
+  assert.equal(x.plays.length,1);assert.ok(x.playing(),'opening video playing and never reports back');
+  await x.launch();
+  assert.equal(x.playing(),false,'boarding stopped the opening video');
+  assert.equal(x.plays.length,1,'launch never asks for the video');
+  x.d.querySelector('.launch-scene button')?.click();await wait(100);
+  const phase=JSON.parse(x.dom.window.localStorage.getItem('mole-beyond:foundation:v1')).journey.phase;
+  assert.equal(phase,'navigating','the launch went through');
+ }finally{x.dom.window.close();}
+});
+test('native side: the opening video is never shown during a drive and is dropped on boarding',()=>{
+ const src=readFileSync(new URL('../src/useNativeServices.ts',import.meta.url),'utf8');
+ assert.match(src,/m\.type === 'cinematic\.play' && !journeyActive\.current/);
+ assert.match(src,/m\.type === 'session\.prepare' \|\| \(m\.type === 'journey\.active' && m\.active === true\)\) && cinematicRef\.current\) cinematicEnded\('skipped'\)/);
+ const launch=readFileSync(new URL('../mole-beyond-hybrid-03/src/lib/foundation/launch-scene.js',import.meta.url),'utf8');
+ assert.doesNotMatch(launch,/playCinematic|RedAlertNative/,'launch never touches the cinematic');
+});
