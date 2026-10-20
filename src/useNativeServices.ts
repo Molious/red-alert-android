@@ -360,7 +360,10 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     if (m.type === 'voice.listen') void listen(m);
     if (m.type === 'voice.cancel' && capture.current?.request.id === m.id) cancelVoice();
     if (m.type === 'speech.say') speak(m);
-    if (m.type === 'cinematic.play') showCinematic({ doc: m.doc, id: m.id });
+    // #30: the opening video belongs to app open only. Never show it during a drive, and drop it the moment
+    // the captain boards or a journey goes live, so it can never cover or delay the cockpit or a launch.
+    if (m.type === 'cinematic.play' && !journeyActive.current) showCinematic({ doc: m.doc, id: m.id });
+    if ((m.type === 'session.prepare' || (m.type === 'journey.active' && m.active === true)) && cinematicRef.current) cinematicEnded('skipped');
     if (m.type === 'cinematic.stop' && cinematicRef.current?.id === m.id) showCinematic(null);
     if (m.type === 'ai.ask') void askCrew(m);
     if (m.type === 'speech.cancel') stopSpeech(m.id);
