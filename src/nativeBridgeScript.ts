@@ -42,7 +42,7 @@ export const nativeBridgeScript = `
     cancelPreparation: function(id){delete preparations[id];post('session.cancel',id);},
     setAudioMuted: function(value){value=!!value;if(audioMuted===value)return;audioMuted=value;post('audio.state',0,{muted:value});},
     // Opening cinematic (#19): the app plays the native video over the page. done(outcome) runs once when it
-    // ends by itself ('finished' or 'error'); stopCinematic(id) stops it and done is NOT called.
+    // ends by itself ('finished', 'skipped' by a tap, or 'error'); stopCinematic(id) stops it and done is NOT called.
     playCinematic: function (done) { var id = ++serial; cinematics[id] = done; post('cinematic.play', id); return id; },
     stopCinematic: function (id) { delete cinematics[id]; post('cinematic.stop', id); },
     announce: function () { post('bridge.ready', 0); window.dispatchEvent(new CustomEvent('red-alert-native-ready')); },
@@ -69,7 +69,7 @@ export const nativeBridgeScript = `
         var done = listens[m.id];
         if (done) { delete listens[m.id]; done(m.text || null, m.error || null); }
       } else if (m.type === 'cinematic.end') {
-        var shown = cinematics[m.id]; delete cinematics[m.id]; if (shown) shown(m.outcome === 'error' ? 'error' : 'finished');
+        var shown = cinematics[m.id]; delete cinematics[m.id]; if (shown) shown(m.outcome === 'error' || m.outcome === 'skipped' ? m.outcome : 'finished');
       } else if (m.type === 'speech.end') {
         var spoken=speeches[m.id];delete speeches[m.id];if(spoken)spoken(m.outcome || 'played');
         if(currentSpeech===m.id){currentSpeech=0;emit('hush');}

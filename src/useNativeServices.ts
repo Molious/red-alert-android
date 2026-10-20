@@ -74,7 +74,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   const cinematicRef = useRef<{ doc: string; id: number } | null>(null);
   const showCinematic = (c: { doc: string; id: number } | null) => { cinematicRef.current = c; setCinematic(c); };
   // Called by the video when it ends by itself. A stopped cinematic (car moved) never reports back.
-  const cinematicEnded = (outcome: 'finished' | 'error') => {
+  const cinematicEnded = (outcome: 'finished' | 'skipped' | 'error') => {
     const c = cinematicRef.current; if (!c) return; showCinematic(null); send(c, 'cinematic.end', { outcome });
   };
 
