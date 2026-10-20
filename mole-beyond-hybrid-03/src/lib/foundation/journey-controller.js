@@ -16,12 +16,19 @@ export function pinWarning(destination,route){
  return gap>150?`The road ends ${Math.round(gap/10)*10} metres from your pin. Check the pin on the map.`:'';
 }
 export function createJourneyController({engine,services,audio,now=Date.now,onChange=()=>{},onLaunch=done=>{done();return {cancel(){}}},id=()=>crypto.randomUUID()}){
- let active=false,disposed=false,fix=null,recent=[],route=null,guide=null,results=[],selected=null,status='Awaiting destination',generation=0,request=null,busy=false,cover=null,storyPaused=false,resumeNeeded=false,resumeRequested=false,lastRecalc=-Infinity,routeBase=0,lastRoadProgress=0,viewGuidance=null,signalAnnounced=false,muted=false,planning=false,lastCue='',lastOffered='',declined=0,lastSpokeAt=0,chatterGap=45000,eventAt=0,safety=null,limit=null,limitAt=-Infinity,limitPos=null,limitBusy=false,lastSafetySave=0,speedingNotedAt=-Infinity;
+ let active=false,disposed=false,fix=null,recent=[],route=null,guide=null,results=[],selected=null,status='Awaiting destination',generation=0,request=null,busy=false,cover=null,storyPaused=false,resumeNeeded=false,resumeRequested=false,lastRecalc=-Infinity,routeBase=0,lastRoadProgress=0,viewGuidance=null,signalAnnounced=false,muted=false,planning=false,lastCue='',lastOffered='',prologueAt=0,prologueRunning=false,declined=0,lastSpokeAt=0,chatterGap=45000,eventAt=0,safety=null,limit=null,limitAt=-Infinity,limitPos=null,limitBusy=false,lastSafetySave=0,speedingNotedAt=-Infinity;
  const state=()=>engine.snapshot();const journey=()=>state().journey;
  const emit=()=>{if(!disposed)onChange({active,journey:journey(),player:state().player,credits:state().credits,fix:validFix(fix,now())?{...fix}:null,parked:parkedEvidence(recent,now()),route,results:[...results],selected,status,busy,storyPaused,resumeNeeded,planning,guidance:viewGuidance,muted,saveRevision:state().revision,speedLimit:limit,safety:safety?safety.snapshot().score:(journey()?.safety?.score??null),cargo:state().cargo||null,contract:state().contracts?.active?.id||null});};
- function say(text,character='WRAITH',priority='navigation',key,extra={}){lastCue=priority==='navigation'?text:lastCue;lastSpokeAt=now();if(!muted)void audio.enqueue({id:key||'line:'+now()+':'+Math.random().toString(36).slice(2,6),text,character,priority,...extra,...(priority==='navigation'?{}:{expiresAt:now()+90000})});}
+ function say(text,character='WRAITH',priority='navigation',key,extra={}){lastCue=priority==='navigation'?text:lastCue;lastSpokeAt=now();if(muted)return Promise.resolve('muted');return audio.enqueue({id:key||'line:'+now()+':'+Math.random().toString(36).slice(2,6),text,character,priority,...extra,...(priority==='navigation'?{}:{expiresAt:now()+90000})});}
  function storyFlag(extra){try{dispatch('live.story',extra);}catch{}}
- function speakScene(lines,prefix){lines.forEach(([character,text],i)=>say(text,character,'mission',prefix+':'+i));}
+ // A scene is queued one line at a time (#21). The dialogue queue holds at most 4 waiting crew lines, so
+ // queueing a 10-line scene at once lost the rest, and a line the queue refuses (story paused, muted,
+ // expired) now stops the scene instead of vanishing. Resolves 'played' only if every line played.
+ function speakScene(lines,prefix,from=0,onLine){let i=from;const next=()=>{if(i>=lines.length)return Promise.resolve('played');const [character,text]=lines[i];return Promise.resolve(say(text,character,'mission',prefix+':'+i)).then(r=>{if(r!=='played')return r;i++;onLine?.(i);return next();});};return next();}
+ // The crew introduction is only marked as heard once every line has played. If it is interrupted
+ // (story paused, muted, signal lost), it carries on from the next unheard line later (#21).
+ function playPrologue(){if(prologueRunning||state().story?.prologueV===2)return;prologueRunning=true;chatterGap=150000;lastSpokeAt=now();
+  speakScene(PROLOGUE,'prologue',prologueAt,i=>{prologueAt=i;lastSpokeAt=now();}).then(r=>{prologueRunning=false;if(r==='played'&&!disposed){prologueAt=0;storyFlag({prologue:true});}},()=>{prologueRunning=false;});}
  function dispatch(type,extra={}){return engine.dispatch({type,id:journey()?.id,...extra});}
  function cancelRequest(){generation++;request?.abort();request=null;busy=false;}
  function cancelCover(){cover?.cancel();cover=null;}
@@ -41,7 +48,12 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
   }catch(e){if(token!==generation||disposed)return;route=null;guide=null;viewGuidance=null;status='Guidance unavailable. '+(e?.message||'Check internet and retry route.');if(!finished(journey()))dispatch('live.phase',{phase:'signal_lost'});resumeNeeded=resuming;say(status);}
   finally{if(token===generation){busy=false;request=null;emit();}}
  }
- function finishLaunch(){if(journey()?.phase!=='launching')return;cancelCover();if(!validFix(fix,now())){lost();return;}dispatch('live.navigate');status='Navigating to '+journey().destination.label;say('Launch complete. '+(guide?.repeat()||'Follow the road route.'));safety=createSafetyMeter();lastSafetySave=now();lastSpokeAt=now();chatterGap=40000;if(state().story?.prologueV!==2){speakScene(PROLOGUE,'prologue');storyFlag({prologue:true});chatterGap=150000;}const c=activeContract();if(c?.depart)say(c.depart.text,c.depart.character,'mission','contract:'+c.id+':depart');emit();}
+ function finishLaunch(){if(journey()?.phase!=='launching')return;cancelCover();if(!validFix(fix,now())){lost();return;}dispatch('live.navigate');status='Navigating to '+journey().destination.label;say('Launch complete. '+(guide?.repeat()||'Follow the road route.'));safety=createSafetyMeter();lastSafetySave=now();lastSpokeAt=now();chatterGap=40000;
+  // #21: launch paused crew lines for the cinematic. Lift that now (keeping the driver's own "pause story"),
+  // or the depart line and the prologue below are refused by the dialogue queue and never heard.
+  audio.setStoryPaused(storyPaused);
+  const c=activeContract();if(c?.depart)say(c.depart.text,c.depart.character,'mission','contract:'+c.id+':depart');
+  if(state().story?.prologueV!==2)playPrologue();emit();}
  function refreshLimit(p){if(!services.speedLimit||limitBusy)return;const moved=limitPos?Math.hypot((p.lat-limitPos.lat)*111195,(p.lng-limitPos.lng)*111195*Math.cos(p.lat*Math.PI/180)):Infinity;if(now()-limitAt<20000&&moved<250)return;limitBusy=true;limitAt=now();limitPos={lat:p.lat,lng:p.lng};Promise.resolve(services.speedLimit(p)).then(v=>{if(Number.isFinite(v))limit=v;else if(moved>600)limit=null;}).catch(()=>{}).finally(()=>{limitBusy=false;});}
  function activeContract(){const a=state().contracts?.active;return a?contractById(a.id):null;}
  function offerContract(){declined=0;const o=contractOffer(state());if(!o||!o.offer||lastOffered===o.id+':'+state().revision)return;lastOffered=o.id+':'+state().revision;say(o.offer.text+' Accept or decline, Captain?',o.offer.character,'mission','contract:'+o.id+':offer:'+now(),{ask:true});}
@@ -49,7 +61,7 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
  function acceptContract(){const o=contractOffer(state());if(!o){status='A contract is already in the hold. Deliver it first.';return;}try{engine.dispatch({type:'contract.accept',id:o.id});status='Contract accepted: '+o.title+' for '+STATIONS[o.station].name+'.';say('Contract accepted. '+o.title+' is in the hold, bound for '+STATIONS[o.station].name+'. It is delivered when we reach your destination.','MAX','mission','contract:'+o.id+':accepted');}catch(e){status=e.message;say(e.message,'MAX','mission');}}
  function resolveEvent(action){if(storyPaused||viewGuidance?.turnSoon||!validFix(fix,now())||journey()?.phase!=='navigating'){status='Crew action deferred until navigation is clear.';return;}const j=journey(),event=j?.activeEvent;if(!event){status='No crew action is waiting.';return;}const outcome=resolveCrewEvent(event,action,state());dispatch('live.resolve',{eventId:event.id,action});for(const line of outcome.lines)if(!muted)void audio.enqueue({...line,expiresAt:now()+60000});status=outcome.lines[0].text;}
  const api={
-  enter(){if(disposed)return;active=true;planning=true;fix=null;recent=[];audio.setStoryPaused(false);audio.holdStory?.(false);const j=journey();if(!finished(j)){resumeNeeded=true;dispatch('live.phase',{phase:'signal_lost'});status='Saved destination loaded. Resume navigation to acquire a fresh route.';say('Welcome back, Captain '+(state().player?.name||'Captain')+'. Your destination is saved. Say resume navigation when ready.');}else{resumeNeeded=false;status='Where are we heading? Enter or speak a destination.';say('Welcome aboard, Captain '+(state().player?.name||'Captain')+'. Where are we heading?');offerContract();}emit();},
+  enter(){if(disposed)return;active=true;planning=true;fix=null;recent=[];prologueAt=0;audio.setStoryPaused(false);audio.holdStory?.(false);const j=journey();if(!finished(j)){resumeNeeded=true;dispatch('live.phase',{phase:'signal_lost'});status='Saved destination loaded. Resume navigation to acquire a fresh route.';say('Welcome back, Captain '+(state().player?.name||'Captain')+'. Your destination is saved. Say resume navigation when ready.');}else{resumeNeeded=false;status='Where are we heading? Enter or speak a destination.';say('Welcome aboard, Captain '+(state().player?.name||'Captain')+'. Where are we heading?');offerContract();}emit();},
   async command(action){if(disposed)return;try{
    switch(action.type){
     case 'destination':planning=true;status='Enter a street address, suburb and country, or say destination followed by the address.';break;
@@ -95,7 +107,7 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
    if(!g.valid&&!g.arrived){audio.holdStory?.(true);if(g.offRoute&&!busy&&now()-lastRecalc>=8000){lastRecalc=now();say('You are off the planned route. Recalculating.');void loadRoute(true);}else{status='Position does not match the route. Waiting for a reliable fix.';}emit();return;}
    if(busy){emit();return;}
    if(journey().phase!=='navigating'){emit();return;}
-   if(state().story?.prologueV!==2&&!g.turnSoon&&!storyPaused){speakScene(PROLOGUE,'prologue:'+now());storyFlag({prologue:true});chatterGap=150000;lastSpokeAt=now();}
+   if(state().story?.prologueV!==2&&!prologueRunning&&!g.turnSoon&&!storyPaused)playPrologue();
    const verified=routeBase+g.progressMeters;
    if(g.progressMeters>lastRoadProgress+.5||g.arrived){dispatch('live.progress',{revision:journey().routeRevision,verifiedMeters:Math.max(journey().verifiedMeters,verified),remainingMeters:g.remainingMeters,arrivalConfirmed:g.arrived});lastRoadProgress=g.progressMeters;}
    audio.setStoryPaused(storyPaused);audio.holdStory?.(!!g.turnSoon);for(const cue of g.cues)if(!muted){lastSpokeAt=now();void audio.enqueue(cue);}

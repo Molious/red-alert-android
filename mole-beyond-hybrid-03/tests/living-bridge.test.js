@@ -42,7 +42,7 @@ test('a first launch plays the prologue, crew chatter fills quiet stretches, and
  c.enter();for(let i=0;i<4;i++)fix(0);await c.command({type:'search',text:'Far'});await c.command({type:'select',index:0});await c.command({type:'confirm'});await new Promise(r=>setTimeout(r,0));
  assert.ok(lines.some(l=>l.ask&&l.id.includes(':offer')),'a contract is offered by voice');assert.ok(!engine.snapshot().contracts?.active,'nothing is accepted without the captain');
  await c.command({type:'decline'});assert.ok(lines.some(l=>/Another job came in/.test(l.text)),'declining brings another option');await c.command({type:'accept'});assert.ok(engine.snapshot().contracts.active.id.startsWith('job-'),'accepted the dispatch job');
- for(let i=0;i<4;i++)fix(0);await c.command({type:'launch'});
+ for(let i=0;i<4;i++)fix(0);await c.command({type:'launch'});await new Promise(r=>setTimeout(r,0)); // the prologue is marked heard once its lines have played (#21)
  assert.ok(lines.some(l=>l.id.startsWith('prologue:')),'prologue on first launch');assert.equal(engine.snapshot().story.prologue,true);
  let lng=0;for(let i=0;i<400;i++){fix(lng+=.0002,15,3000);}
 assert.ok(lines.some(l=>l.id.startsWith('chat:')),'crew chatter between encounters');

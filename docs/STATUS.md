@@ -5,19 +5,20 @@ Whoever finishes a task updates this file in the same PR.
 
 ## Builds
 - **Current build:** 1.0.28 (versionCode 29) · branch `build/mole-beyond-1.0.28` · APK on a **draft** GitHub Release `v1.0.28`. Cory publishes it after trying it.
-- **In 1.0.28:** #3 voice after screen lock (PR #12) · #5 arrival at home + re-route (PR #13) · #9 draft-release workflow (PR #14)
+- **In 1.0.28:** #3 voice after screen lock (PR #12) · #5 arrival at home + re-route (PR #13) · #9 draft-release workflow (PR #14) · #17 flaky test (PR #18)
 - **Previous:** 1.0.27 (versionCode 28) · branch `build/mole-beyond-1.0.27`, unchanged
 - **Device under test:** Samsung S23 Ultra
 - **Last field test:** 2026-10-20 on 1.0.27 · Issue #2
 
 ## In review (for 1.0.29)
-- #4 Crew act anyway and grumble · PR #16 · Claudette · needs Chet's review
+- #21 Crew introduction and contract depart lines dropped at launch · PR #23 · Linux Claude · needs review
+- #4 Crew act anyway and grumble · PR #16 · Claudette · changes requested (offer flag + Max's line); rebase on #21 once merged
 - #6 Bridge key bar · PR #10 (draft) · Chet · landscape 7-key size fix, bundle, tests, screenshots
 
 ## Queued
 - #11 Bridge stays up while creeping 2–8 km/h, plus `signal_lost` · Linux Claude · after #10
 - #15 Destination pin and road end on the map before launch · Chet · after #10
-- #17 Flaky cockpit-flow test (can fail CI builds) · Claudette
+- #19 Opening cinematic · Chet · must end via `finishLaunch()` so crew lines play (see #19)
 
 ## Waiting on Cory
 - Try the 1.0.28 draft APK, then press **Publish release**
@@ -45,4 +46,4 @@ Whoever finishes a task updates this file in the same PR.
 - Never ask Cory to do anything while he's driving. Field-test notes get filed once he's parked.
 - `src/hybridHtml.ts` is generated: after merging any game-source change, re-run `npm run bundle:hybrid` rather than hand-merging it.
 
-_Updated by Claudette, 2026-10-20 (1.0.28 cut)_
+_Updated by Linux Claude, 2026-10-20 (#21)_
