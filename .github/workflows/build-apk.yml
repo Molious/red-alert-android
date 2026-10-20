@@ -126,7 +126,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.APK_NAME }}
-          path: artifacts/
+          # Only this build's files; artifacts/ also holds APKs committed by older builds.
+          path: |
+            artifacts/${{ env.APK_NAME }}.apk
+            artifacts/${{ env.APK_NAME }}.apk.sha256
+            artifacts/APK-VERIFICATION.txt
+            artifacts/APK-METADATA.txt
+            artifacts/build-${{ env.APP_VERSION }}-status.json
           if-no-files-found: error
       - name: Prepare draft Release for Cory's approval (build branches only)
         if: env.IS_RELEASE == 'true'
