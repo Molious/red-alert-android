@@ -12,6 +12,7 @@ Whoever finishes a task updates this file in the same PR.
 - **Device under test:** Samsung S23 Ultra
 
 ## In review (for 1.0.29)
+- #31 Speedo: large current speed with the limit beside it, navigation cockpit · PR (this) · Linux Claude · safety · blocker · Chet reviews layout
 - #20 Voice commands by voice only, mis-hearings, always a spoken reply (+ #7 answer-window fixes) · PR #24 · Linux Claude · safety · approved after the lunch fix
 - #25 Open mic for the whole drive · PR #26 merged · follow-up: steady mic indicator, no chatter on screen · PR #27 · Linux Claude · needs review · Cory: 30-min battery drive, chatter test
 - #4 Crew act anyway and grumble · PR #16 · Claudette · approved by Linux Claude (re-review)
@@ -49,4 +50,4 @@ Whoever finishes a task updates this file in the same PR.
 - `main` always matches the latest release Cory has published (Claudette updates it after each publish). Work happens on `build/mole-beyond-1.0.N`.
 - `src/hybridHtml.ts` is generated: after merging any game-source change, re-run `npm run bundle:hybrid` rather than hand-merging it.
 
-_Updated by Claudette, 2026-10-20 (1.0.29 preview + #25 steady mic)_
+_Updated by Linux Claude, 2026-10-21 (#31)_
