@@ -132,6 +132,24 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-bridge=compact] .flight-actions button[data-action=cancel]{color:#ffc9c9;border-color:#6a3440}
 .live-cockpit .viewport[data-bridge=compact] .tray-toggle{border-color:#4ee4ff88!important}
 .live-cockpit .viewport[data-bridge=compact] .combat-hud,.live-cockpit .viewport[data-bridge=compact] .salvage-feed{display:none}
+/* ---- #31 speedo · owner Linux Claude (Chet reviews; please don't edit this section) ----
+   Current speed large enough to read at a glance, the posted limit beside it as a road sign. Navigation mode
+   only. Sits on the viewport above the windscreen frame art, on the left of the map just under "Heading up":
+   clear of the turn card, the route line and ship, the zoom keys and the captain. Placed by speedo() in JS. */
+.mole-speedo{display:none}
+.live-cockpit .viewport[data-nav-mode=on] .mole-speedo{display:flex;position:absolute;z-index:9;left:10px;top:150px;align-items:center;gap:8px;padding:5px 8px 5px 10px;background:#030a14eb;border:2px solid #5ff0ff77;border-radius:14px;pointer-events:none;box-shadow:0 2px 14px #000c}
+.mole-speedo .mole-speedo-now{display:flex;flex-direction:column;align-items:center}
+.mole-speedo [data-speedo-speed]{font:700 54px/0.95 system-ui,-apple-system,Roboto,'Segoe UI',sans-serif;color:#fff;font-variant-numeric:tabular-nums;min-width:2.1ch;text-align:center;text-shadow:0 0 8px #000}
+.mole-speedo small{font:700 12px/1 system-ui,-apple-system,Roboto,sans-serif;color:#bfefff;letter-spacing:.1em;margin-top:3px}
+.mole-speedo.over{border-color:#ff3b30;box-shadow:0 0 0 2px #ff3b3066,0 2px 14px #000c}
+.mole-speedo.over [data-speedo-speed]{color:#ff5a4f}
+.mole-speedo-limit{display:flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;background:#fff;border:6px solid #d81e1e;box-sizing:border-box}
+.mole-speedo-limit b{font:800 23px/1 system-ui,-apple-system,Roboto,sans-serif;color:#111;font-variant-numeric:tabular-nums}
+.mole-speedo-limit.unknown{background:#ffffff33;border-color:#d81e1e88}.mole-speedo-limit.unknown b{color:#ffffffaa}
+/* Narrow map: limit sign under the number so the panel stays left of the route line. */
+.live-cockpit .viewport[data-nav-mode=on] .mole-speedo.stack{flex-direction:column;gap:6px;padding:6px 8px}
+@media(orientation:landscape){.mole-speedo [data-speedo-speed]{font-size:48px}.mole-speedo-limit{width:48px;height:48px;border-width:6px}.mole-speedo-limit b{font-size:21px}}
+/* ---- end #31 speedo ---- */
 `;
 
 export const navLayoutScript = `(function(){
@@ -282,7 +300,7 @@ export const navLayoutScript = `(function(){
   if(view)new MutationObserver(bridgeSync).observe(view,{attributes:true,attributeFilter:['class','data-nav-mode']});
   function sync(){
    var p=(phase&&phase.textContent||'').trim().toLowerCase();var on=PHASES.indexOf(p)>=0&&!(parkedView&&p!=='launching');if(view)view.dataset.stopped=parkedView&&PHASES.indexOf(p)>=0?'true':'false';
-   var want=on?'on':'off';if(view&&view.dataset.navMode!==want){var was=view.dataset.navMode;view.dataset.navMode=want;if(!was&&!on)return;if(!on){dash.classList.remove('tray-open');var b=dash.querySelector('.tray-toggle');if(b){b.textContent='More controls';b.setAttribute('aria-expanded','false');}}setTimeout(resize,50);}
+   var want=on?'on':'off';if(view&&view.dataset.navMode!==want){var was=view.dataset.navMode;view.dataset.navMode=want;/* #31 speedo: re-place when the cockpit layout changes without a resize */if(typeof placeSpeedo==='function')requestAnimationFrame(placeSpeedo);if(!was&&!on)return;if(!on){dash.classList.remove('tray-open');var b=dash.querySelector('.tray-toggle');if(b){b.textContent='More controls';b.setAttribute('aria-expanded','false');}}setTimeout(resize,50);}
   }
   if(phase)new MutationObserver(sync).observe(phase,{childList:true,characterData:true,subtree:true});
   var status=dash.querySelector('.road-status');
@@ -290,6 +308,32 @@ export const navLayoutScript = `(function(){
   if(status){new MutationObserver(alertSync).observe(status,{childList:true,characterData:true,subtree:true});alertSync();}
   sync();bridgeSync();
  }
- function start(){install();bridgeArt();wire();windscreen();hud();seats();charUnlock();new MutationObserver(function(){if(!document.getElementById('mole-nav-layout'))install();bridgeArt();wire();windscreen();hud();seats();charUnlock();}).observe(document.documentElement,{childList:true,subtree:true});}
+ // ---- #31 speedo · owner Linux Claude (Chet reviews) ----
+ // Mirrors the dashboard's speed and limit into a large panel on the windscreen, under "Heading up".
+ var speedoPlace=0;
+ function placeSpeedo(){speedoPlace=0;var view=document.querySelector('.live-cockpit .viewport'),box=view&&view.querySelector(':scope>.mole-speedo'),nav=view&&view.querySelector('.live-navigation');
+  if(!box||!nav||view.dataset.navMode!=='on')return;var v=view.getBoundingClientRect(),n=nav.getBoundingClientRect();if(!n.height)return;
+  var o=nav.querySelector('.mole-orient'),r=o&&o.getBoundingClientRect(),top=r&&r.height?r.bottom+10:n.top+10,left=r&&r.width?r.left:n.left+10;
+  // Never over the route line: the ship and the road ahead run up the middle of the map.
+  var mid=n.left+n.width/2;left=Math.min(left,n.left+8);box.classList.remove('stack');
+  box.style.top=Math.round(top-v.top)+'px';box.style.left=Math.round(Math.max(n.left+6,left)-v.left)+'px';
+  if(box.getBoundingClientRect().right>mid-16)box.classList.add('stack');}
+ function speedo(){
+  var view=document.querySelector('.live-cockpit .viewport'),dash=document.querySelector('.cockpit-dashboard');if(!view||!dash)return;
+  var box=view.querySelector(':scope>.mole-speedo');
+  if(!box){box=document.createElement('div');box.className='mole-speedo';box.setAttribute('role','img');
+   box.innerHTML='<div class="mole-speedo-now"><b data-speedo-speed>—</b><small>KM/H</small></div><div class="mole-speedo-limit unknown"><b data-speedo-limit>—</b></div>';
+   view.appendChild(box);
+   var sp=dash.querySelector('[data-speed]'),lim=dash.querySelector('[data-limit]'),num=box.querySelector('[data-speedo-speed]'),sign=box.querySelector('.mole-speedo-limit'),lv=box.querySelector('[data-speedo-limit]');
+   var upd=function(){var s=sp?sp.textContent.trim():'',l=lim?lim.textContent.trim():'',hasS=/^\\d+$/.test(s),hasL=/^\\d+$/.test(l);
+    num.textContent=hasS?s:'—';lv.textContent=hasL?l:'—';sign.classList.toggle('unknown',!hasL);box.classList.toggle('over',hasS&&hasL&&+s>+l+4);
+    box.setAttribute('aria-label',(hasS?s+' kilometres per hour':'Speed unknown')+(hasL?', limit '+l:''));};
+   var mo=new MutationObserver(upd);[sp,lim].forEach(function(e){if(e)mo.observe(e,{childList:true,characterData:true,subtree:true});});upd();
+   window.addEventListener('resize',function(){setTimeout(placeSpeedo,80);});
+  }
+  if(!speedoPlace)speedoPlace=requestAnimationFrame(placeSpeedo);
+ }
+ // ---- end #31 speedo ----
+ function start(){install();bridgeArt();wire();windscreen();hud();seats();charUnlock();speedo();new MutationObserver(function(){if(!document.getElementById('mole-nav-layout'))install();bridgeArt();wire();windscreen();hud();seats();charUnlock();speedo();}).observe(document.documentElement,{childList:true,subtree:true});}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();`;
