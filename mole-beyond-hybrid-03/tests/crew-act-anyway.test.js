@@ -6,14 +6,14 @@ import {createJourneyController} from '../src/lib/foundation/journey-controller.
 import {createMissionEngine} from '../src/lib/foundation/mission.js';
 import {parseRoadRoute} from '../src/lib/foundation/navigation-core.js';
 
-function setup(){
+function setup({result='played'}={}){
  const N=40,pts=[];for(let i=0;i<=N;i++)pts.push([0,i*.002]);
  const route=parseRoadRoute({code:'Ok',routes:[{geometry:{type:'LineString',coordinates:pts},distance:8900,duration:900,legs:[{steps:[{maneuver:{type:'depart',location:pts[0]},distance:8900},{maneuver:{type:'arrive',location:pts[N]},distance:0}]}]}]});
  const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)},engine=createMissionEngine({storage,live:true});
  engine.dispatch({type:'player',player:{name:'Cory',gender:'male',species:'human',occupation:'explorer'}});
  engine.dispatch({type:'live.story',prologue:true}); // skip the prologue so encounters come sooner
  let time=100000;const lines=[];
- const c=createJourneyController({engine,now:()=>time,services:{search:async()=>[{label:'Far',lat:.08,lng:0}],route:async()=>route,speedLimit:async()=>60},audio:{enqueue:i=>{lines.push(i);return Promise.resolve('played')},clear(){},setStoryPaused(){},holdStory(){}},onLaunch:cb=>{cb();return {cancel(){}}},id:()=>'trip-4'});
+ const c=createJourneyController({engine,now:()=>time,services:{search:async()=>[{label:'Far',lat:.08,lng:0}],route:async()=>route,speedLimit:async()=>60},audio:{enqueue:i=>{lines.push(i);return Promise.resolve(result)},clear(){},setStoryPaused(){},holdStory(){}},onLaunch:cb=>{cb();return {cancel(){}}},id:()=>'trip-4'});
  const fix=(lat,speed=0,dt=1500)=>{time+=dt;c.fix({lat,lng:0,accuracy:5,speed,heading:0,ts:time});};
  const plan=async()=>{c.enter();for(let i=0;i<4;i++)fix(0);await c.command({type:'search',text:'Far'});await c.command({type:'select',index:0});await c.command({type:'confirm'});await new Promise(r=>setTimeout(r,0));for(let i=0;i<4;i++)fix(0);};
  return {c,engine,lines,fix,plan};
@@ -49,4 +49,26 @@ test('an unanswered encounter: the crew member grumbles, then handles it',async(
  assert.ok(isGrumble(line.text));
  const resolved=x.lines.findIndex(l=>l.id===eventId+':resolved');assert.ok(resolved>g,'the grumble comes before the outcome');
  assert.equal(line.character,x.lines.find(l=>l.id===eventId).character,'grumbled by the crew member who asked');
+});
+
+test('a muted or unheard offer is never taken on the Captain\'s behalf',async()=>{
+ const x=setup();await x.c.command({type:'mute'});await x.plan();await x.c.command({type:'unmute'});
+ await x.c.command({type:'launch'});assert.ok(!x.engine.snapshot().contracts?.active,'muted: the offer was never heard, so nothing is loaded');
+});
+
+test('an offer cut off before it played is not taken either',async()=>{
+ const x=setup({result:'skipped'});await x.plan();await x.c.command({type:'launch'});
+ assert.ok(!x.engine.snapshot().contracts?.active,'the offer never played, so Max does not act on it');
+});
+
+test('a job Max took on her own can be handed back by saying decline',async()=>{
+ const x=setup();await x.plan();await x.c.command({type:'launch'});
+ const id=x.engine.snapshot().contracts.active.id;assert.match(x.lines.find(l=>/Contract accepted/.test(l.text)).text,/Say decline/);
+ await x.c.command({type:'decline'});
+ assert.equal(x.engine.snapshot().contracts.active,null,'handed back');assert.ok(x.lines.some(l=>l.id===`contract:${id}:released`));
+});
+
+test('a job the Captain accepted is not dropped by a stray decline',async()=>{
+ const x=setup();await x.plan();await x.c.command({type:'accept'});await x.c.command({type:'launch'});
+ await x.c.command({type:'decline'});assert.ok(x.engine.snapshot().contracts.active,'explicit accept stands');
 });
