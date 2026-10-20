@@ -17,7 +17,7 @@ export function pinWarning(destination,route){
  return gap>150?`The road ends ${Math.round(gap/10)*10} metres from your pin. Check the pin on the map.`:'';
 }
 export function createJourneyController({engine,services,audio,now=Date.now,onChange=()=>{},onLaunch=done=>{done();return {cancel(){}}},id=()=>crypto.randomUUID()}){
- let active=false,disposed=false,fix=null,recent=[],route=null,guide=null,results=[],selected=null,status='Awaiting destination',generation=0,request=null,busy=false,cover=null,storyPaused=false,resumeNeeded=false,resumeRequested=false,lastRecalc=-Infinity,routeBase=0,lastRoadProgress=0,viewGuidance=null,signalAnnounced=false,muted=false,planning=false,lastCue='',lastOffered='',prologueAt=0,prologueRunning=false,pendingOffer='',autoTaken='',takeOnLaunch=false,grumbles=0,declined=0,lastSpokeAt=0,chatterGap=45000,eventAt=0,safety=null,limit=null,limitAt=-Infinity,limitPos=null,limitBusy=false,lastSafetySave=0,speedingNotedAt=-Infinity;
+ let active=false,disposed=false,fix=null,recent=[],route=null,guide=null,results=[],selected=null,status='Awaiting destination',generation=0,request=null,busy=false,cover=null,storyPaused=false,resumeNeeded=false,resumeRequested=false,lastRecalc=-Infinity,routeBase=0,lastRoadProgress=0,viewGuidance=null,signalAnnounced=false,muted=false,planning=false,lastCue='',lastOffered='',prologueAt=0,prologueRunning=false,pendingOffer='',autoTaken='',takeOnLaunch=false,launchPending=false,grumbles=0,declined=0,lastSpokeAt=0,chatterGap=45000,eventAt=0,safety=null,limit=null,limitAt=-Infinity,limitPos=null,limitBusy=false,lastSafetySave=0,speedingNotedAt=-Infinity;
  const state=()=>engine.snapshot();const journey=()=>state().journey;
  const emit=()=>{if(!disposed)onChange({active,journey:journey(),player:state().player,credits:state().credits,fix:validFix(fix,now())?{...fix}:null,parked:parkedEvidence(recent,now()),route,results:[...results],selected,status,busy,storyPaused,resumeNeeded,planning,guidance:viewGuidance,muted,saveRevision:state().revision,speedLimit:limit,safety:safety?safety.snapshot().score:(journey()?.safety?.score??null),cargo:state().cargo||null,contract:state().contracts?.active?.id||null});};
  function say(text,character='WRAITH',priority='navigation',key,extra={}){lastCue=priority==='navigation'?text:lastCue;lastSpokeAt=now();if(muted)return Promise.resolve('muted');return audio.enqueue({id:key||'line:'+now()+':'+Math.random().toString(36).slice(2,6),text,character,priority,...extra,...(priority==='navigation'?{}:{expiresAt:now()+90000})});}
@@ -69,7 +69,7 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
  // auto=true: nobody answered in time, so the crew member grumbles before handling it (#4).
  function resolveEvent(action,auto=false){if(storyPaused||viewGuidance?.turnSoon||!validFix(fix,now())||journey()?.phase!=='navigating'){status='Crew action deferred until navigation is clear.';return;}const j=journey(),event=j?.activeEvent;if(!event){status='No crew action is waiting.';return;}const outcome=resolveCrewEvent(event,action,state());dispatch('live.resolve',{eventId:event.id,action});if(auto&&!muted)void audio.enqueue({id:event.id+':grumble',character:event.character,text:grumble(event.character,grumbles++),priority:'mission',expiresAt:now()+60000});for(const line of outcome.lines)if(!muted)void audio.enqueue({...line,expiresAt:now()+60000});status=outcome.lines[0].text;}
  const api={
-  enter(){if(disposed)return;active=true;planning=true;fix=null;recent=[];prologueAt=0;audio.setStoryPaused(false);audio.holdStory?.(false);const j=journey();if(!finished(j)){resumeNeeded=true;dispatch('live.phase',{phase:'signal_lost'});status='Saved destination loaded. Resume navigation to acquire a fresh route.';say('Welcome back, Captain '+(state().player?.name||'Captain')+'. Your destination is saved. Say resume navigation when ready.');}else{resumeNeeded=false;status='Where are we heading? Enter or speak a destination.';say('Welcome aboard, Captain '+(state().player?.name||'Captain')+'. Where are we heading?');offerContract();}emit();},
+  enter(){if(disposed)return;launchPending=false;active=true;planning=true;fix=null;recent=[];prologueAt=0;audio.setStoryPaused(false);audio.holdStory?.(false);const j=journey();if(!finished(j)){resumeNeeded=true;dispatch('live.phase',{phase:'signal_lost'});status='Saved destination loaded. Resume navigation to acquire a fresh route.';say('Welcome back, Captain '+(state().player?.name||'Captain')+'. Your destination is saved. Say resume navigation when ready.');}else{resumeNeeded=false;status='Where are we heading? Enter or speak a destination.';say('Welcome aboard, Captain '+(state().player?.name||'Captain')+'. Where are we heading?');offerContract();}emit();},
   async command(action){if(disposed)return;try{
    switch(action.type){
     case 'destination':planning=true;status='Enter a street address, suburb and country, or say destination followed by the address.';break;
@@ -80,9 +80,16 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
      catch(e){if(token===generation){status=e?.message||'Address lookup failed.';say(status);}}finally{if(token===generation){busy=false;request=null;emit();}}return;
     }
     case 'select':if(!Number.isSafeInteger(action.index)||!results[action.index]){status='Choose an address result first.';break;}selected=results[action.index];status='Confirm '+selected.label+(selected.approximate?' · approximate pin, check the map':'');say('Destination option '+(action.index+1)+': '+selected.label+'. '+(selected.approximate?APPROXIMATE+' ':'')+'Confirm destination to use this address.');break;
-    case 'confirm':if(!selected){status='Choose an address result first.';break;}if(!finished(journey())){status='Cancel the current journey before changing destination.';break;}dispatch('live.destination',{id:id(),destination:selected});planning=false;results=[];if(!state().contracts?.active)offerContract();await loadRoute(false);return;
+    case 'confirm':launchPending=false;if(!selected){status='Choose an address result first.';break;}if(!finished(journey())){status='Cancel the current journey before changing destination.';break;}dispatch('live.destination',{id:id(),destination:selected});planning=false;results=[];if(!state().contracts?.active)offerContract();await loadRoute(false);return;
     case 'retry':if(!finished(journey())){resumeRequested=true;await loadRoute(journey().launched===true);}else status='Choose a destination first.';return;
-    case 'launch':if(journey()?.phase!=='route_ready'||!route){status='Confirm a destination and calculate a route first.';break;}if(!parkedEvidence(recent,now())){status='Launch cinematic requires three accurate, low-speed GPS fixes while parked. Unknown speed does not count as parked.';break;}takeOnLaunch=!!pendingOffer&&!state().contracts?.active&&contractOffer(state())?.id===pendingOffer;dispatch('live.launch');audio.setStoryPaused(true);say('Launching. Wraith has the road route.');cover=onLaunch(finishLaunch);emit();return;
+    case 'launch':{if(journey()?.phase!=='route_ready'||!route){status='Confirm a destination and calculate a route first.';break;}
+     // #30 (Cory): launch is never refused for not being parked. No current position yet: launch on the first good fix.
+     if(!validFix(fix,now())){launchPending=true;status='Waiting for GPS, Captain. Launching as soon as we have a position.';say('Waiting for GPS, Captain. We launch as soon as I have a position.');break;}
+     launchPending=false;takeOnLaunch=!!pendingOffer&&!state().contracts?.active&&contractOffer(state())?.id===pendingOffer;dispatch('live.launch');
+     // Parked: the short launch animation, ended early if the car moves. Moving, or parked can't be confirmed
+     // (unknown speed, poor accuracy): no animation, guidance starts now.
+     if(parkedEvidence(recent,now())){audio.setStoryPaused(true);say('Launching. Wraith has the road route.');cover=onLaunch(finishLaunch);emit();return;}
+     finishLaunch();return;}
     case 'repeat':say(guide?.repeat()||lastCue||'Enter a destination to begin.');break;
     case 'recenter':status=validFix(fix,now())?'Map following your current position.':'Waiting for an accurate GPS position.';break;
     case 'pause-story':storyPaused=true;audio.setStoryPaused(true);status='Crew story paused. Directions remain on.';break;
@@ -97,7 +104,7 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
     case 'trade':{if(!finished(journey())&&!['resolving_destination','route_ready'].includes(journey().phase)){status='The market opens when we are parked.';break;}try{const next=engine.dispatch({type:'trade',op:action.op,commodity:action.commodity,units:action.units||1});const t=next.lastTrade;status=(t.op==='buy'?'Bought ':'Sold ')+t.units+' '+COMMODITIES[t.commodity].name.toLowerCase()+' for '+t.total+' credits.';}catch(e){status=e.message;}break;}
     case 'refresh':break;
     case 'save':dispatch('live.save');status='Progress saved on this device.';break;
-    case 'cancel':cancelRequest();cancelCover();audio.clear();audio.holdStory?.(false);route=null;guide=null;recent=[];viewGuidance=null;if(!finished(journey()))dispatch('live.cancel');resumeNeeded=false;planning=true;status='Journey cancelled. Choose your next destination.';break;
+    case 'cancel':launchPending=false;cancelRequest();cancelCover();audio.clear();audio.holdStory?.(false);route=null;guide=null;recent=[];viewGuidance=null;if(!finished(journey()))dispatch('live.cancel');resumeNeeded=false;planning=true;status='Journey cancelled. Choose your next destination.';break;
     case 'home':if(!finished(journey())){status='Cancel the current journey before changing character.';break;}api.background();return;
     case 'resume':api.resume();return;
     default:status='Command not recognised. Use the dashboard or say repeat direction.';
@@ -107,6 +114,8 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
    if(!validFix(p,now())){lost();return;}if(fix&&p.ts<=fix.ts)return;
    fix={...p};recent.push({...p});recent=recent.slice(-4);signalAnnounced=false;
    let j=journey();if(cover&&(!Number.isFinite(p.speed)||p.speed>.5||p.accuracy>25))finishLaunch();
+   // #30: "launch" said before the first position: go now.
+   if(launchPending){if(j?.phase==='route_ready'&&route){void api.command({type:'launch'});return;}launchPending=false;}
    if(resumeNeeded){if(resumeRequested&&!busy)void loadRoute(j?.launched===true);emit();return;}
    if(j&&!finished(j)&&j.routeRevision===0&&!busy&&!route){void loadRoute(false);emit();return;}
    if(!guide||!j||finished(j)||j.phase==='route_ready'||j.phase==='launching'){emit();return;}
@@ -132,7 +141,7 @@ export function createJourneyController({engine,services,audio,now=Date.now,onCh
   }catch(e){status='Journey paused: '+e.message;audio.setStoryPaused(true);emit();}},
   locationError(message){cancelRequest();lost(message);},
   tick(){if(disposed||!active)return;if(fix&&!validFix(fix,now()))lost();},
-  background(){if(disposed)return;cancelRequest();cancelCover();active=false;fix=null;recent=[];guide=null;route=null;viewGuidance=null;audio.clear();audio.setStoryPaused(true);if(!finished(journey())){dispatch('live.phase',{phase:'signal_lost'});resumeNeeded=true;}status='Navigation paused while app is inactive. Resume with a fresh GPS fix.';emit();},
+  background(){if(disposed)return;launchPending=false;cancelRequest();cancelCover();active=false;fix=null;recent=[];guide=null;route=null;viewGuidance=null;audio.clear();audio.setStoryPaused(true);if(!finished(journey())){dispatch('live.phase',{phase:'signal_lost'});resumeNeeded=true;}status='Navigation paused while app is inactive. Resume with a fresh GPS fix.';emit();},
   resume(){if(disposed)return;active=true;fix=null;recent=[];resumeRequested=true;resumeNeeded=!finished(journey());planning=finished(journey());status='Waiting for fresh GPS. Navigation will resume after the route is checked.';emit();},
   snapshot(){return {active,journey:journey(),status,parked:parkedEvidence(recent,now()),route,fix,results,selected,planning,guidance:viewGuidance,resumeNeeded};},
   dispose(){if(disposed)return;api.background();disposed=true;}
