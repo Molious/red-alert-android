@@ -73,7 +73,8 @@ test('compact tray keeps Resume story reachable and surfaces journey warnings',a
   status.textContent='Navigating to Ann Street';await tick();assert.ok(!status.classList.contains('mole-alert'));
  }finally{dom.window.close();}
 });
-test('microphone is tap-to-talk: auto hands-free is switched off and one command turns it off again',async()=>{
+// #25 (Cory, 2026-10-20): the mic is on for the whole drive; no tap needed. The Mic key turns it off and on.
+test('open mic: on by itself, stays on after commands, and the Mic key turns it off and on',async()=>{
  const vc=new VirtualConsole();let heard=null,listens=0;
  const dom=new JSDOM(game.replace('</head>',()=>'<script>'+navLayoutScript+'</script></head>'),{url:'https://vox-star-command.base44.app/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){w.structuredClone=structuredClone;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.SVGSVGElement.prototype.createSVGRect=()=>({});
   w.RedAlertNative={speakRequest(t,done){setTimeout(()=>done('played'),0);return 1},cancelSpeech(){},watchPosition(){return 7},clearWatch(){},searchAddress(t,cb){cb([],null);return 8},cancelSearch(){},
@@ -84,13 +85,14 @@ test('microphone is tap-to-talk: auto hands-free is switched off and one command
   d.querySelector('#create-player').click();d.querySelector('#board-ship').click();
   await tick(800);
   const mic=d.querySelector('.navigation-strip [data-action=voice]');
-  for(let i=0;i<4&&mic.getAttribute('aria-pressed')==='true';i++){heard?.('decline contract',null);await tick(500);}
-  assert.equal(mic.getAttribute('aria-pressed'),'false','after answering the offers the mic is off');
-  const before=listens;mic.click();await tick(500);
-  assert.equal(mic.getAttribute('aria-pressed'),'true');assert.ok(listens>before,'tap opens the mic');
-  heard?.('repeat direction',null);await tick(400);
-  assert.equal(mic.getAttribute('aria-pressed'),'false','mic switches off after one command');
-  const after=listens;await tick(800);assert.equal(listens,after,'mic does not reopen by itself');
+  assert.equal(mic.getAttribute('aria-pressed'),'true','the mic is on without a tap');assert.ok(listens>0,'listening');
+  for(let i=0;i<3;i++){heard?.('decline contract',null);await tick(500);}
+  assert.equal(mic.getAttribute('aria-pressed'),'true','answering the offers leaves the mic on');
+  const before=listens;heard?.('repeat direction',null);await tick(800);
+  assert.equal(mic.getAttribute('aria-pressed'),'true','still on after a command');assert.ok(listens>before,'listening again by itself');
+  mic.click();await tick(300);const off=listens;await tick(800);
+  assert.equal(mic.getAttribute('aria-pressed'),'false','the Mic key turns it off');assert.equal(listens,off,'and it stays off');
+  mic.click();await tick(800);assert.equal(mic.getAttribute('aria-pressed'),'true');assert.ok(listens>off,'the Mic key turns it back on');
  }finally{dom.window.close();}
 });
 test('character screen offers to end a leftover route so the captain can be changed',async()=>{

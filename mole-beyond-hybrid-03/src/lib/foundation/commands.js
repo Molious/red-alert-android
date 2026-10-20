@@ -71,6 +71,61 @@ const IN_CONTEXT={
  keep:['no','nope','keep going','dont','do not','never mind','nevermind','carry on','continue'],
 };
 
+// Open mic (#25): the mic is on for the whole drive, so passengers, the radio and the driver's own
+// conversation all reach the recogniser. Outside an answer window only these whole phrases count:
+// distinctive words nobody says in passing. Answers to the crew count only as their exact answer words, and
+// only while that question is open. No sentence scanning, no near-misses, no sound-alikes, no bare yes/no.
+const STRICT={
+ repeat:['repeat','repeat that','repeat direction','repeat directions','repeat the direction','repeat the directions','say again','say that again','repeat please','repeat instruction','repeat the instruction','re peat'],
+ mute:['mute','mute audio','mute it','mute sound','pause audio','stop audio','sound off','audio off','mute the crew','mute everything'],
+ unmute:['unmute','un mute','unmute audio','sound on','audio on','resume audio','enable voice','voice on','unmute the crew'],
+ 'pause-story':['pause story','pause the story','stop story','stop the story','story off','no chatter','stop chatter','quiet crew','crew quiet','pause crew'],
+ 'resume-story':['resume story','resume the story','continue story','continue the story','story on','chatter on'],
+ resume:['resume navigation','resume route','resume the route','start gps','restart navigation','resume nav','start navigation'],
+ retry:['retry route','reroute','re route','recalculate','recalculate route','find a new route'],
+ recenter:['recenter','recentre','re center','re centre','center map','centre map','center the map','centre the map'],
+ save:['save game','save progress','save the game'],
+ cancel:PHRASES.cancel,
+ home:['main menu','home menu'],
+ destination:['set destination','new destination','change destination','set the destination','set a destination'],
+ confirm:['confirm destination','confirm the destination'],
+ station:['open station','open the station','open market','open the market'],
+ crew:['open crew','crew panel','crew screen','open the crew panel'],
+ 'mic-off':PHRASES['mic-off'],
+ help:['what can i say','voice commands','list commands'],
+ launch:['launch','launch now','launch the ship'],
+ 'accept-contract':['accept contract','accept the contract','accept mission','accept the mission','accept job','accept the job','take the job','take the contract'],
+ 'decline-contract':['decline contract','decline the contract','decline mission','decline the mission','decline job','decline the job'],
+ // answers: only while that question is open
+ accept:['accept','accept it','accept that','accept deal','accept the deal','accept the offer','i accept','we accept','except'],
+ decline:['decline','decline it','decline that','decline deal','decline the deal','decline the offer','i decline','we decline','the cline','de cline'],
+ defend:['defend','defend us','defend the ship','the fend','de fend','shields up'],
+ evade:['evade','evade them','a vade','cloak us'],
+ delegate:['let crew handle it','let the crew handle it','crew handle it','you handle it','delegate','let crew decide','let the crew decide'],
+ acknowledge:['acknowledge','acknowledged','acknowledge contact','roger','roger that'],
+ scan:['scan','scan it','run a scan','run the scan','run a passive scan'],
+ collect:['collect','collect it','collect salvage','collect the salvage','collect the pod'],
+ repair:['repair','repair it','repairs','repair the shields'],
+};
+const ANSWER_TYPES=new Set(['accept','decline','defend','evade','delegate','acknowledge','scan','collect','repair']);
+const STRICT_TYPE=new Map();for(const [type,list] of Object.entries(STRICT))for(const p of list)STRICT_TYPE.set(p,type);
+/** Open-mic matching (#25): whole phrases from STRICT only; answers only while asked. */
+export function matchStrict(text,context={}){
+ const expect=context.expect||[];const s=normalizeSpeech(text);if(!s)return null;
+ if(expect.includes('cancel')&&expect.includes('keep')){
+  if(['yes','yes cancel it','cancel it','confirm','cancel journey','cancel the journey'].includes(s))return {action:{type:'confirm-cancel'},via:'strict'};
+  if(['no','keep going','carry on','never mind','nevermind'].includes(s))return {action:{type:'keep-journey'},via:'strict'};
+  return null;
+ }
+ const opt=s.match(/^(?:option|number) (one|two|three|four|five|[1-5])$/);if(opt&&context.results)return {action:{type:'select',index:NUMBERS[opt[1]]},via:'strict'};
+ const dest=String(text??'').trim().match(/^\s*(?:destination|navigate to|set destination to|set the destination to)\s+(.+)$/i);
+ if(dest&&dest[1].trim().length>=3&&!STRICT_TYPE.has(normalizeSpeech(dest[1])))return {action:{type:'search',text:dest[1].trim()},via:'strict'};
+ const type=STRICT_TYPE.get(s);if(!type)return null;
+ if(ANSWER_TYPES.has(type)&&!expect.includes(type))return null;
+ if(type==='unmute'&&!context.muted&&s==='un mute')return null;
+ return {action:{type},via:'strict'};
+}
+
 const FILLER=/^(?:uh+|um+|er+m?|ah+|hmm+|oh|okay so|ok so|okay|ok|so|well|hey|right|alright then|please|captain|cap|computer|ship|chet|wraith|max|vex|silas|bastion|guys|team|crew,)\s+/;
 const TRAIL=/\s+(?:please|thanks|thank you|now|captain|cap|mate|for me|then|chet|wraith|max|vex|silas|bastion)$/;
 
