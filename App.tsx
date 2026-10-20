@@ -1,3 +1,4 @@
+import {Cinematic} from './src/Cinematic';
 import {useEffect,useRef,useState} from 'react';
 import {Pressable,Text,View,StyleSheet} from 'react-native';
 import {SafeAreaProvider,SafeAreaView} from 'react-native-safe-area-context';
@@ -20,6 +21,7 @@ export default function App(){
  <View style={s.bar}><Text style={s.text}>MOLE BEYOND · LIVE COCKPIT · 1.0.29</Text><Pressable accessibilityRole="button" accessibilityLabel={native.audioMuted?"Resume audio":"Pause audio"} onPress={native.toggleAudio}><Text style={s.stop}>{native.audioMuted?'RESUME AUDIO':'PAUSE AUDIO'}</Text></Pressable></View>
  {!!boot&&<Text style={s.text}>{boot}</Text>}{!!error&&<View><Text style={s.stop}>{error}</Text><Pressable accessibilityRole="button" onPress={()=>{native.reset();setError('');setReloadKey(k=>k+1);}}><Text style={s.stop}>Retry game</Text></Pressable></View>}{!!native.error&&<Text style={s.stop}>{native.error}</Text>}
  <WebView applicationNameForUserAgent="MoleBeyond/1.0.29 (+https://github.com/Molious/red-alert-android)" key={reloadKey} ref={web} source={{html,baseUrl:APP_ORIGIN+'/'}} originWhitelist={[APP_ORIGIN]} style={s.page} javaScriptEnabled domStorageEnabled geolocationEnabled={false} mixedContentMode="never" setSupportMultipleWindows={false} onMessage={onGameMessage} injectedJavaScriptBeforeContentLoaded={nativeBridgeScript} injectedJavaScript={nativeBridgeScript} onShouldStartLoadWithRequest={r=>r.url===APP_ORIGIN+'/'||r.url==='about:blank'} onError={e=>{clearBootTimer();setBoot('');setError(e.nativeEvent.description);}} onRenderProcessGone={()=>{native.reset();setError('The test view stopped. Close and reopen the app while parked.');}}/>
+ {native.cinematic&&<Cinematic key={native.cinematic.doc+':'+native.cinematic.id} onEnd={native.cinematicEnded}/>}
  </SafeAreaView></SafeAreaProvider>;
 }
 const s=StyleSheet.create({page:{flex:1,backgroundColor:'#05070b'},bar:{padding:12,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},text:{color:'#8ddde2',fontSize:11},stop:{color:'#ffb4bc',padding:8}});

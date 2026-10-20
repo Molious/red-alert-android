@@ -38,6 +38,8 @@ const TYPES = new Set([
   'session.cancel',
   'audio.state',
   'ai.ask',
+  'cinematic.play',
+  'cinematic.stop',
 ]);
 
 export function parseBridgeMessage(raw: string, url: string): Message | null {

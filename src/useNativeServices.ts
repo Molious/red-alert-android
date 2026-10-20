@@ -69,6 +69,15 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     );
   };
 
+  // ---------- opening cinematic (#19) ----------
+  const [cinematic, setCinematic] = useState<{ doc: string; id: number } | null>(null);
+  const cinematicRef = useRef<{ doc: string; id: number } | null>(null);
+  const showCinematic = (c: { doc: string; id: number } | null) => { cinematicRef.current = c; setCinematic(c); };
+  // Called by the video when it ends by itself. A stopped cinematic (car moved) never reports back.
+  const cinematicEnded = (outcome: 'finished' | 'error') => {
+    const c = cinematicRef.current; if (!c) return; showCinematic(null); send(c, 'cinematic.end', { outcome });
+  };
+
   // ---------- voice ----------
   const clearTimer = () => {
     if (timer.current) clearTimeout(timer.current);
@@ -331,6 +340,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     stopSpeech();
     clearAllWatches();
     setAwake(false);
+    showCinematic(null);
   };
   const onMessage = (e: WebViewMessageEvent) => {
     const m = parseBridgeMessage(e.nativeEvent.data, e.nativeEvent.url);
@@ -350,6 +360,8 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     if (m.type === 'voice.listen') void listen(m);
     if (m.type === 'voice.cancel' && capture.current?.request.id === m.id) cancelVoice();
     if (m.type === 'speech.say') speak(m);
+    if (m.type === 'cinematic.play') showCinematic({ doc: m.doc, id: m.id });
+    if (m.type === 'cinematic.stop' && cinematicRef.current?.id === m.id) showCinematic(null);
     if (m.type === 'ai.ask') void askCrew(m);
     if (m.type === 'speech.cancel') stopSpeech(m.id);
     if (m.type === 'geo.search') { void (async()=>{try {
@@ -406,7 +418,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     };
   }, []);
 
-  return { phase, error, audioMuted, toggleAudio:()=>audioSwitch.current?.toggle(), onMessage, reset, cancelVoice };
+  return { phase, error, audioMuted, toggleAudio:()=>audioSwitch.current?.toggle(), onMessage, reset, cancelVoice, cinematic, cinematicEnded };
 }
 
 async function waitForSpeechToFinish(maxMs = 8000) {
