@@ -298,11 +298,11 @@ export const navLayoutScript = `(function(){
   }
   keyLabels();
   // Stopped for 30 s mid-journey: show the bridge. Moving again (8 km/h+): back to the cockpit.
-  var speedEl=dash.querySelector('[data-speed]'),stoppedSince=0,parkedView=false;
+  var speedEl=dash.querySelector('[data-speed]'),stoppedSince=0,movingSince=0,parkedView=false;
   function moving(){var v=parseInt(speedEl&&speedEl.textContent,10);return isFinite(v)?v:null;}
   // Only time spent stopped DURING a journey counts; the clock restarts at every launch.
   var lastPhase='';
-  setInterval(function(){var v=moving(),was=parkedView,p=(phase&&phase.textContent||'').trim().toLowerCase(),inJourney=PHASES.indexOf(p)>=0&&p!=='launching';if(p!==lastPhase&&(p==='launching'||PHASES.indexOf(lastPhase)<0)){stoppedSince=0;parkedView=false;}lastPhase=p;if(!inJourney){stoppedSince=0;parkedView=false;}else if(v!==null&&v>=8){stoppedSince=0;parkedView=false;}else if(v===null||v<=2){if(!stoppedSince)stoppedSince=Date.now();if(Date.now()-stoppedSince>=30000)parkedView=true;}else stoppedSince=0;if(was!==parkedView)sync();},1000);
+  setInterval(function(){var v=moving(),was=parkedView,p=(phase&&phase.textContent||'').trim().toLowerCase(),inJourney=PHASES.indexOf(p)>=0&&p!=='launching';if(p!==lastPhase&&(p==='launching'||PHASES.indexOf(lastPhase)<0)){stoppedSince=0;parkedView=false;}lastPhase=p;/* #11: creeping off at 4+ km/h for ~2 s also leaves the parked bridge (8+ km/h at once); 3 km/h is the dead band against standstill GPS jitter. */if(!inJourney){stoppedSince=0;movingSince=0;parkedView=false;}else if(v!==null&&v>=8){stoppedSince=0;movingSince=0;parkedView=false;}else if(v!==null&&v>=4){stoppedSince=0;if(!movingSince)movingSince=Date.now();if(Date.now()-movingSince>=2000)parkedView=false;}else if(v===null||v<=2){movingSince=0;if(!stoppedSince)stoppedSince=Date.now();if(Date.now()-stoppedSince>=30000)parkedView=true;}else{stoppedSince=0;movingSince=0;}if(was!==parkedView)sync();},1000);
   // Bridge view is compact (side map, slim keys) unless planning a destination, a panel is open, or Menu is open.
   function bridgeSync(){if(!view)return;var off=view.dataset.navMode!=='on',panel=dash.querySelector('.station-panel:not([hidden]),.crew-panel:not([hidden])');var want=off&&!view.classList.contains('planning-destination')&&!panel&&!dash.classList.contains('tray-open')?'compact':'full';if(view.dataset.bridge!==want){view.dataset.bridge=want;setTimeout(resize,60);}}
   new MutationObserver(bridgeSync).observe(dash,{subtree:true,attributes:true,attributeFilter:['hidden','class']});

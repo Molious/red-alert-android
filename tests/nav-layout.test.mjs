@@ -127,3 +127,23 @@ test('time parked before launch does not count: launching always opens the navig
   speed.textContent='20';await tick(1100);assert.equal(view.dataset.navMode,'on','moving again: cockpit');
  }finally{dom.window.close();}
 });
+// #11: creeping away at 2–8 km/h used to keep the parked bridge (and any open panel) up.
+test('creeping off at 4+ km/h for about 2 s leaves the parked bridge; standstill jitter does not',async()=>{
+ const {dom,d}=await cockpit();
+ try{
+  const view=d.querySelector('.live-cockpit .viewport'),phase=d.querySelector('[data-phase]'),speed=d.querySelector('.cockpit-dashboard [data-speed]');
+  const realNow=dom.window.Date.now;let offset=0;dom.window.Date.now=()=>realNow()+offset;
+  speed.textContent='0';phase.textContent='launching';await tick(1100);phase.textContent='navigating';await tick(1100);
+  offset+=31000;await tick(1100);assert.equal(view.dataset.navMode,'off','stopped 30 s: bridge');
+  speed.textContent='3';await tick(3300);assert.equal(view.dataset.navMode,'off','3 km/h (GPS jitter): stays on the bridge');
+  speed.textContent='5';await tick(1100);assert.equal(view.dataset.navMode,'off','a single 5 km/h reading is not enough');
+  await tick(2300);assert.equal(view.dataset.navMode,'on','creeping at 5 km/h for ~2 s: back to the cockpit');
+  speed.textContent='0';await tick(1100);offset+=31000;await tick(1100);assert.equal(view.dataset.navMode,'off','parked again');
+  speed.textContent='5';await tick(1100);speed.textContent='1';await tick(1100);speed.textContent='5';await tick(1100);
+  assert.equal(view.dataset.navMode,'off','stop-start jitter never adds up to 2 s of moving');
+ }finally{dom.window.close();}
+});
+test('the Crew key stays hidden while driving with the signal lost (#11)',()=>{
+ const src=readFileSync(new URL('../mole-beyond-hybrid-03/src/lib/foundation/cockpit-view.js',import.meta.url),'utf8');
+ assert.match(src,/\['navigating','launching','recalculating','signal_lost'\]\.includes\(s\.journey\.phase\)&&viewport\.dataset\.stopped!=='true'/);
+});
