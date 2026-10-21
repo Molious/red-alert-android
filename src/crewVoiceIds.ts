@@ -1,15 +1,16 @@
-// ElevenLabs voice for each crew member (#33), chosen by Cory from the ElevenLabs Voice Library.
-// Voice IDs are not secret. An empty entry means that character keeps the phone's own voice.
+﻿// ElevenLabs voices selected for Mole Beyond v1.0.30.
+// Preserve internal IDs for compatibility with existing saves and routing.
 export const CREW_VOICE_IDS: Record<string, string> = {
-  WRAITH: '', // navigator, male: low, sly, loyal; speaks every direction
-  VEX: '', // weapons, male: loud, reckless, grinning
-  SILAS: '', // scanners, male: cold, clipped, precise
-  BASTION: '', // engineer, male: gruff, calm, weary
-  MAX: '', // salvage and trade, female: wily, quick, cheeky
-  CHET: '', // the ship's AI, female: warm, dry humour
+  WRAITH: 'CwhRBWXzGAHq8TQ4Fs17', // Zyren — insectoid navigator
+  VEX: 'ysswSXp8U9dFpzPJqFje', // reptilian weapons officer
+  SILAS: 'hpp4J3VqNfWAUOO0d1Us', // Sila — female Race of Light
+  BASTION: 'nPczCjzI2devNBz1zQrb', // shields and engineering
+  MAX: 'QzgYVYSNBgksoEWDkpKt', // salvage and trade
+  CHET: 'dyLJ4nCukg4AOgAVlUR7', // ATLAS — male ship AI
 };
 export function elevenVoiceFor(character: string | undefined): string | null {
   const key = String(character || '').toUpperCase();
-  const id = CREW_VOICE_IDS[key === 'MAGS' ? 'MAX' : key] || '';
+  const aliases: Record<string, string> = { MAGS: 'MAX', ZYREN: 'WRAITH', SILA: 'SILAS', ATLAS: 'CHET' };
+  const id = CREW_VOICE_IDS[aliases[key] || key] || '';
   return /^[A-Za-z0-9]{20}$/.test(id) ? id : null;
 }
