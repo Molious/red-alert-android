@@ -138,6 +138,8 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-bridge=compact] .flight-actions button{min-height:44px;min-width:44px}
 .live-cockpit .viewport[data-bridge=compact] .flight-actions button::after{letter-spacing:0;font-size:9px;overflow-wrap:anywhere}
 }
+/* Issue #6 portrait, narrow phones: seven keys at ~49px; tighter labels so STATION fits its key. */
+@media (orientation: portrait) and (max-width: 400px){.live-cockpit .viewport[data-bridge=compact] .flight-actions button::after{letter-spacing:.02em}}
 .live-cockpit .viewport[data-bridge=compact] .combat-hud,.live-cockpit .viewport[data-bridge=compact] .salvage-feed{display:none}
 /* ---- #31 speedo · owner Linux Claude (Chet reviews; please don't edit this section) ----
    Current speed large enough to read at a glance, the posted limit beside it as a road sign. Navigation mode
