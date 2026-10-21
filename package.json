@@ -1,6 +1,6 @@
 {
   "name": "mole-beyond-hybrid-test",
-  "version": "1.0.28",
+  "version": "1.0.29",
   "main": "index.ts",
   "dependencies": {
     "expo": "~57.0.27",
@@ -9,6 +9,7 @@
     "expo-speech": "~57.0.3",
     "expo-speech-recognition": "57.1.1",
     "expo-status-bar": "~57.0.1",
+    "expo-video": "~57.0.5",
     "leaflet": "1.9.4",
     "maplibre-gl": "5.24.0",
     "react": "19.2.3",

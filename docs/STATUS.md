@@ -4,20 +4,25 @@ Shared status for Cory, Claude and Chet. Keep it short: one line per item, detai
 Whoever finishes a task updates this file in the same PR.
 
 ## Builds
-- **Current build:** 1.0.28 (versionCode 29) · branch `build/mole-beyond-1.0.28` · APK on a **draft** GitHub Release `v1.0.28`. Cory publishes it after trying it.
-- **In 1.0.28:** #3 voice after screen lock (PR #12) · #5 arrival at home + re-route (PR #13) · #9 draft-release workflow (PR #14)
-- **Previous:** 1.0.27 (versionCode 28) · branch `build/mole-beyond-1.0.27`, unchanged
+- **Current build:** 1.0.29 (versionCode 30) · branch `build/mole-beyond-1.0.29` · **draft** release `v1.0.29` (preview: no cinematic yet). It's rebuilt when more work merges; Cory publishes the final one.
+- **In 1.0.29 so far:** #4 crew act anyway (PR #16) · #17 flaky test (PR #18) · #21 prologue/depart lines at launch (PR #23) · #20 + #7 voice commands (PR #24) · #25 always-on mic (PR #26)
+- **Still to come:** #19 opening cinematic (Chet) · #6 bridge keys (PR #10, Chet) · #11 (Linux Claude, after #10) · #15 map pin (Chet, may slip)
+- **New PRs target `build/mole-beyond-1.0.29`.**
+- **Published:** v1.0.28 (versionCode 29) · `main` matches it
 - **Device under test:** Samsung S23 Ultra
-- **Last field test:** 2026-10-20 on 1.0.27 · Issue #2
 
 ## In review (for 1.0.29)
-- #4 Crew act anyway and grumble · PR #16 · Claudette · needs Chet's review
+- #31 Speedo: large current speed with the limit beside it, navigation cockpit · PR #37 · Linux Claude · safety · blocker · Chet reviews layout
+- #30 Launch never refused for not being parked (moving / unknown speed → guidance now; parked → animation) · PR #36 · Linux Claude · safety · blocker
+- #20 Voice commands by voice only, mis-hearings, always a spoken reply (+ #7 answer-window fixes) · PR #24 · Linux Claude · safety · approved after the lunch fix
+- #25 Open mic for the whole drive · PR #26 merged · follow-up: steady mic indicator, no chatter on screen · PR #27 · Linux Claude · needs review · Cory: 30-min battery drive, chatter test
+- #4 Crew act anyway and grumble · PR #16 · Claudette · approved by Linux Claude (re-review)
 - #6 Bridge key bar · PR #10 (draft) · Chet · landscape 7-key size fix, bundle, tests, screenshots
 
 ## Queued
 - #11 Bridge stays up while creeping 2–8 km/h, plus `signal_lost` · Linux Claude · after #10
 - #15 Destination pin and road end on the map before launch · Chet · after #10
-- #17 Flaky cockpit-flow test (can fail CI builds) · Claudette
+- #19 Opening cinematic · Chet · must end via `finishLaunch()` so crew lines play (see #19)
 
 ## Waiting on Cory
 - Try the 1.0.28 draft APK, then press **Publish release**
@@ -43,6 +48,8 @@ Whoever finishes a task updates this file in the same PR.
 - `safety` label = touches driving, GPS, navigation, mic or driver interaction → the other agent reviews with the PR checklist, Cory gives final approval.
 - No secrets in Issues, PRs or code. The AI crew API key stays on the phone.
 - Never ask Cory to do anything while he's driving. Field-test notes get filed once he's parked.
+- `main` always matches the latest release Cory has published (Claudette updates it after each publish). Work happens on `build/mole-beyond-1.0.N`.
 - `src/hybridHtml.ts` is generated: after merging any game-source change, re-run `npm run bundle:hybrid` rather than hand-merging it.
 
-_Updated by Claudette, 2026-10-20 (1.0.28 cut)_
+_Updated by Linux Claude, 2026-10-21 (#31)_
+_Updated by Linux Claude, 2026-10-21 (#30)_

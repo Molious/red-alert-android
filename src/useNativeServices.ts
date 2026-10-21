@@ -12,7 +12,7 @@ import { APP_ORIGIN, CHANNEL, parseBridgeMessage, type Message } from './bridgeP
 import {createRecognitionGate} from './recognitionGate';
 import {createSessionPreparation} from './sessionPreparation';
 import {createSpeechSession,waitForCaptureSpeech,createAudioSwitch} from './speechSession';
-import { pickLanguage, pickRecognitionService, MAX_LISTEN_MS } from './voicePolicy';
+import { pickLanguage, pickRecognitionService, MAX_LISTEN_MS, planRecognition, VOICE_BIAS, type RecognitionPlan } from './voicePolicy';
 import { isApproximatePin } from './addressPolicy';
 import {assignCrewVoices,crewVoiceFor,crewVoiceList,type CrewVoice,type DeviceVoice,type VoiceOption} from './crewVoices';
 
@@ -38,6 +38,8 @@ type Capture = {
   retried: boolean;
   retrying: boolean;
   delivered: boolean;
+  open: boolean;
+  onDevice: boolean;
 };
 
 const NO_SERVICE =
@@ -67,6 +69,15 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     );
   };
 
+  // ---------- opening cinematic (#19) ----------
+  const [cinematic, setCinematic] = useState<{ doc: string; id: number } | null>(null);
+  const cinematicRef = useRef<{ doc: string; id: number } | null>(null);
+  const showCinematic = (c: { doc: string; id: number } | null) => { cinematicRef.current = c; setCinematic(c); };
+  // Called by the video when it ends by itself. A stopped cinematic (car moved) never reports back.
+  const cinematicEnded = (outcome: 'finished' | 'skipped' | 'error') => {
+    const c = cinematicRef.current; if (!c) return; showCinematic(null); send(c, 'cinematic.end', { outcome });
+  };
+
   // ---------- voice ----------
   const clearTimer = () => {
     if (timer.current) clearTimeout(timer.current);
@@ -78,15 +89,30 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     const text = c.text.trim();
     send(c.request, 'voice.result', { text: text.length >= 2 ? text : '', error: text.length >= 2 ? null : c.error });
   };
+  // On-device recognition when the phone has an English model (#25), worked out once per session.
+  const plan = useRef<Promise<RecognitionPlan> | null>(null);
+  const recognitionPlan = () => {
+    if (!plan.current) plan.current = (async () => {
+      const services = safe(() => Recognition.getSpeechRecognitionServices(), [] as string[]);
+      const onDeviceSupported = safe(() => Recognition.supportsOnDeviceRecognition(), false);
+      let installedLocales: string[] = [];
+      if (onDeviceSupported) { try { installedLocales = (await Recognition.getSupportedLocales({ androidRecognitionServicePackage: 'com.google.android.as' })).installedLocales; } catch {} }
+      return planRecognition({ services, onDeviceSupported, installedLocales });
+    })().catch(() => planRecognition({ services: [], onDeviceSupported: false, installedLocales: [] }));
+    return plan.current;
+  };
   const startRecognition = (c: Capture) => {
     if(!recognitionGate.current.claim(c))throw Error('Previous microphone session is still ending');
     const services = safe(() => Recognition.getSpeechRecognitionServices(), [] as string[]);
+    // Continuous mode on Android 13+ feeds the recogniser from the app's own audio stream: no start/stop beep.
     try{Recognition.start({
       lang: c.lang,
       interimResults: true,
       continuous: true,
       maxAlternatives: 1,
-      androidRecognitionServicePackage: pickRecognitionService(services),
+      androidRecognitionServicePackage: c.onDevice ? 'com.google.android.as' : pickRecognitionService(services),
+      requiresOnDeviceRecognition: c.onDevice,
+      contextualStrings: VOICE_BIAS,
       recordingOptions: { persist: false },
     });}catch(e){recognitionGate.current.release();throw e;}
     setPhase('listening');
@@ -121,7 +147,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     setPhase('permission');
     const c: Capture = {
       request: r, epoch: ++epoch.current, text: '', error: null,
-      lang: 'en-AU', retried: false, retrying: false, delivered: false,
+      lang: 'en-AU', retried: false, retrying: false, delivered: false, open: r.open === true, onDevice: false,
     };
     capture.current = c;
     try {
@@ -140,6 +166,9 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
       }
       // Let SEXTANT finish the question ("Lock on?") before the mic opens, so the prompt is heard and
       // not transcribed back as the answer.
+      const chosen = await recognitionPlan();
+      if (capture.current !== c || c.epoch !== epoch.current || document.current !== r.doc || !active.current) return;
+      c.onDevice = chosen.onDevice; c.lang = chosen.lang;
       const speechReady=await waitForCaptureSpeech(()=>capture.current===c&&c.epoch===epoch.current&&document.current===r.doc&&active.current,()=>waitForSpeechToFinish(20000));
       if(speechReady==='stale')return;
       if(speechReady==='busy'){c.error='busy';deliver(c);capture.current=null;setPhase('off');return;}
@@ -177,6 +206,15 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   useSpeechRecognitionEvent('error', (e) => {
     const c = recognitionGate.current.current();
     if (!c||c!==capture.current||c.epoch!==epoch.current) return;
+    // On-device recognition refused (model missing or busy): use the network recogniser for the rest of the session.
+    if (c.onDevice && !c.retried && !c.text && ['language-not-supported', 'service-not-allowed', 'client', 'server', 'network'].includes(e.error)) {
+      c.retried = true;
+      c.retrying = true;
+      c.onDevice = false;
+      c.lang = 'en-AU';
+      plan.current = Promise.resolve({ service: undefined, onDevice: false, lang: 'en-AU' });
+      return;
+    }
     // en-AU refused by this phone's recogniser: try again once in the phone's own language.
     if ((e.error === 'language-not-supported' || e.error === 'bad-grammar') && !c.retried && !c.text) {
       c.retried = true;
@@ -302,6 +340,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     stopSpeech();
     clearAllWatches();
     setAwake(false);
+    showCinematic(null);
   };
   const onMessage = (e: WebViewMessageEvent) => {
     const m = parseBridgeMessage(e.nativeEvent.data, e.nativeEvent.url);
@@ -321,6 +360,11 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     if (m.type === 'voice.listen') void listen(m);
     if (m.type === 'voice.cancel' && capture.current?.request.id === m.id) cancelVoice();
     if (m.type === 'speech.say') speak(m);
+    // #30: the opening video belongs to app open only. Never show it during a drive, and drop it the moment
+    // the captain boards or a journey goes live, so it can never cover or delay the cockpit or a launch.
+    if (m.type === 'cinematic.play' && !journeyActive.current) showCinematic({ doc: m.doc, id: m.id });
+    if ((m.type === 'session.prepare' || (m.type === 'journey.active' && m.active === true)) && cinematicRef.current) cinematicEnded('skipped');
+    if (m.type === 'cinematic.stop' && cinematicRef.current?.id === m.id) showCinematic(null);
     if (m.type === 'ai.ask') void askCrew(m);
     if (m.type === 'speech.cancel') stopSpeech(m.id);
     if (m.type === 'geo.search') { void (async()=>{try {
@@ -364,8 +408,10 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
         if(preparing)preparation.current?.foreground();else web.current?.injectJavaScript("window.dispatchEvent(new Event('hybrid-foreground')); true;");
         return;
       }
-      if (capture.current || away || backgrounded) return;
-      away = setTimeout(goBackground, 2000);
+      if (away || backgrounded) return;
+      // While the mic is capturing, a short blip is the recogniser taking the mic, not the app leaving.
+      // With the mic always on (#25) that can't mean "never": real backgrounding still counts after 20 s.
+      away = setTimeout(goBackground, capture.current ? 20000 : 2000);
     });
     return () => {
       alive.current = false;
@@ -375,7 +421,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     };
   }, []);
 
-  return { phase, error, audioMuted, toggleAudio:()=>audioSwitch.current?.toggle(), onMessage, reset, cancelVoice };
+  return { phase, error, audioMuted, toggleAudio:()=>audioSwitch.current?.toggle(), onMessage, reset, cancelVoice, cinematic, cinematicEnded };
 }
 
 async function waitForSpeechToFinish(maxMs = 8000) {
