@@ -5,7 +5,7 @@ name: Build APK
 # The version comes from app.json, so this file doesn't change between versions.
 on:
   push:
-    branches: ['build/**']
+    branches: ['build/**', 'chet/30-crew-roster-from-33']
     paths-ignore:
       - 'artifacts/**'
       - 'docs/**'
