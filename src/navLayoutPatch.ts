@@ -122,7 +122,7 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-bridge=compact] .road-status:not(.mole-alert){display:none}
 .live-cockpit .viewport[data-bridge=compact] .crew-comms{background:linear-gradient(90deg,#04101ce0,#04101c80 70%,#04101c00);border-left:2px solid #c4a3ec;border-radius:0 6px 6px 0;margin:0 0 6px}
 .live-cockpit .viewport[data-bridge=compact] .crew-comms span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-/* Issue #6: keep every visible compact-bridge key on one row (including MENU). */
+/* Issue #6: compact keys stay one row in portrait; landscape uses two rows to preserve >=44px targets. */
 .live-cockpit .viewport[data-bridge=compact] .flight-actions{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none;gap:4px}
 .live-cockpit .viewport[data-bridge=compact] .flight-actions button{display:none}
 .live-cockpit .viewport[data-bridge=compact] .flight-actions button:is([data-action=destination],[data-action=station],[data-action=crew],.tray-toggle),
@@ -132,6 +132,12 @@ export const navLayoutCss = `
 .live-cockpit .viewport[data-bridge=compact] .flight-actions button[data-action=launch]{border-color:#77e3de;background:linear-gradient(#155563,#0a2a33)}
 .live-cockpit .viewport[data-bridge=compact] .flight-actions button[data-action=cancel]{color:#ffc9c9;border-color:#6a3440}
 .live-cockpit .viewport[data-bridge=compact] .tray-toggle{border-color:#4ee4ff88!important}
+/* Issue #6 landscape worst case: seven keys at 30px is unsafe; use four columns, two rows. */
+@media (orientation: landscape) and (max-height: 600px){
+.live-cockpit .viewport[data-bridge=compact] .flight-actions{grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:repeat(4,minmax(44px,1fr));gap:4px}
+.live-cockpit .viewport[data-bridge=compact] .flight-actions button{min-height:44px;min-width:44px}
+.live-cockpit .viewport[data-bridge=compact] .flight-actions button::after{letter-spacing:0;font-size:9px;overflow-wrap:anywhere}
+}
 .live-cockpit .viewport[data-bridge=compact] .combat-hud,.live-cockpit .viewport[data-bridge=compact] .salvage-feed{display:none}
 `;
 
