@@ -30,6 +30,7 @@ export const nativeBridgeScript = `
     if (opts && typeof opts.rate === 'number') extra.rate = opts.rate;
     if (opts && typeof opts.character === 'string' && /^[A-Z]{2,12}$/.test(opts.character)) extra.character = opts.character;
     if (opts && typeof opts.voice === 'string' && /^[\w#.\-]{1,100}$/.test(opts.voice)) extra.voice = opts.voice;
+    if (opts && ['safety', 'navigation', 'reply', 'mission', 'story'].indexOf(opts.priority) >= 0) extra.priority = opts.priority;
     return extra;
   }
   function emit(name) {
@@ -45,6 +46,8 @@ export const nativeBridgeScript = `
     // ends by itself ('finished', 'skipped' by a tap, or 'error'); stopCinematic(id) stops it and done is NOT called.
     playCinematic: function (done) { var id = ++serial; cinematics[id] = done; post('cinematic.play', id); return id; },
     stopCinematic: function (id) { delete cinematics[id]; post('cinematic.stop', id); },
+    // #33: the ElevenLabs key for the crew voices ('' clears it). It goes to the app on this phone only.
+    setVoiceKey: function (key) { key = String(key || '').trim(); if (key && !/^(sk_[a-f0-9]{30,80}|[a-f0-9]{32})$/i.test(key)) return; post('voice.config', 0, { key: key }); },
     announce: function () { post('bridge.ready', 0); window.dispatchEvent(new CustomEvent('red-alert-native-ready')); },
     listenOnce: function (done, opts) { var id = ++serial; listens[id] = done; post('voice.listen', id, opts && opts.open === true ? { open: true } : {}); return id; },
     cancelListen: function (id) { delete listens[id]; post('voice.cancel', id); },

@@ -1,5 +1,5 @@
-type Request={id:number;doc:string;text?:string;pitch?:number;rate?:number;character?:string;voice?:string};
-type Voice={pitch?:number;rate?:number;character?:string;voice?:string};
+type Request={id:number;doc:string;text?:string;pitch?:number;rate?:number;character?:string;voice?:string;priority?:string};
+type Voice={pitch?:number;rate?:number;character?:string;voice?:string;priority?:string};
 type Callbacks={onStart:()=>void;onDone:()=>void;onStopped:()=>void;onError:()=>void};
 type Timers={set:(fn:()=>void,ms:number)=>unknown;clear:(t:unknown)=>void};
 const realTimers:Timers={set:(fn,ms)=>setTimeout(fn,ms),clear:t=>clearTimeout(t as ReturnType<typeof setTimeout>)};
@@ -21,7 +21,7 @@ export function createSpeechSession({speak,stop,send,recover,isSpeaking,onRecove
   const mine=++attempt;let started=false,timer:unknown=null;
   const ours=()=>mine===attempt&&live(r,token);
   const end=(outcome:string)=>{if(!ours())return;timers.clear(timer);finish(r,outcome);};
-  speak(r.text||'',{onStart:()=>{if(!ours())return;started=true;timers.clear(timer);},onDone:()=>end('played'),onStopped:()=>end('cancelled'),onError:()=>end('failed')},{pitch:r.pitch,rate:r.rate,character:r.character,...(r.voice?{voice:r.voice}:{})});
+  speak(r.text||'',{onStart:()=>{if(!ours())return;started=true;timers.clear(timer);},onDone:()=>end('played'),onStopped:()=>end('cancelled'),onError:()=>end('failed')},{pitch:r.pitch,rate:r.rate,character:r.character,...(r.priority?{priority:r.priority}:{}),...(r.voice?{voice:r.voice}:{})});
   timer=timers.set(()=>{void(async()=>{
    if(started||!ours())return;
    // Some engines never report a start: if it is audibly talking, leave it alone.

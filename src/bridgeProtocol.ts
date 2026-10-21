@@ -19,6 +19,7 @@ export type Message = {
   rate?: number;
   character?: string;
   voice?: string;
+  priority?: string;
   key?: string;
   system?: string;
   open?: boolean;
@@ -39,6 +40,7 @@ const TYPES = new Set([
   'audio.state',
   'ai.ask',
   'cinematic.play',
+  'voice.config',
   'cinematic.stop',
 ]);
 
@@ -62,6 +64,9 @@ export function parseBridgeMessage(raw: string, url: string): Message | null {
     if (m.type === 'speech.say' && m.pitch !== undefined && !(typeof m.pitch === 'number' && m.pitch >= 0.5 && m.pitch <= 2)) return null;
     if (m.type === 'speech.say' && m.rate !== undefined && !(typeof m.rate === 'number' && m.rate >= 0.5 && m.rate <= 2)) return null;
     if (m.type === 'speech.say' && m.character !== undefined && !(typeof m.character === 'string' && /^[A-Z]{2,12}$/.test(m.character))) return null;
+    if (m.type === 'speech.say' && m.priority !== undefined && !['safety', 'navigation', 'reply', 'mission', 'story'].includes(m.priority)) return null;
+    // #33: the ElevenLabs key, from the Crew panel on this phone ('' clears it).
+    if (m.type === 'voice.config' && !(typeof m.key === 'string' && (m.key === '' || /^(sk_[a-f0-9]{30,80}|[a-f0-9]{32})$/i.test(m.key)))) return null;
     if (m.type === 'speech.say' && m.voice !== undefined && !(typeof m.voice === 'string' && /^[\w#.\-]{1,100}$/.test(m.voice))) return null;
     if (m.type === 'ai.ask' && !(typeof m.key === 'string' && /^sk-ant-[\w-]{20,200}$/.test(m.key) && typeof m.system === 'string' && m.system.length <= 4000 && typeof m.text === 'string' && m.text.trim().length > 0 && m.text.length <= 2000)) return null;
     if(m.type === 'geo.search' && (typeof m.text !== 'string' || m.text.trim().length < 3 || m.text.length > 200))return null;

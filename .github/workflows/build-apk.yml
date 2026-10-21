@@ -5,7 +5,7 @@ name: Build APK
 # The version comes from app.json, so this file doesn't change between versions.
 on:
   push:
-    branches: ['build/**']
+    branches: ['build/**', 'chet/30-crew-roster-from-33']
     paths-ignore:
       - 'artifacts/**'
       - 'docs/**'
@@ -94,34 +94,43 @@ jobs:
       - name: Run regression and asset checks
         run: |
           npm run typecheck
+          # Regenerate offline bundle on Linux runner before verification.
+          npm run bundle:hybrid
           npm test
       - name: Generate Android project from the preserved latest game
         run: npx --no-install expo prebuild --platform android --no-install
       - name: Compile installable ARM64 release
         run: |
+          set -o pipefail
           cd android
           bash gradlew assembleRelease --no-daemon --max-workers=2 -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs='-Xmx3072m -XX:MaxMetaspaceSize=768m' --console=plain 2>&1 | tee ../apk-build.log
+      - name: Show the Gradle error
+        if: failure()
+        run: |
+          if [ -f apk-build.log ]; then grep -nE "error:|FAILURE|What went wrong|Could not|e: " apk-build.log | head -20 | while IFS= read -r l; do echo "::error::$l"; done; tail -40 apk-build.log; fi
       - name: Verify APK and prepare download
         run: |
           mkdir -p artifacts
-          cp android/app/build/outputs/apk/release/app-release.apk artifacts/$APK_NAME.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs artifacts/$APK_NAME.apk > artifacts/APK-VERIFICATION.txt
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/$APK_NAME.apk > artifacts/APK-METADATA.txt
-          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 artifacts/$APK_NAME.apk
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/$APK_NAME.apk || { echo "::error::release APK not found: $(ls android/app/build/outputs/apk/release/ 2>&1 | tr '\n' ' ')"; exit 1; }
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs artifacts/$APK_NAME.apk > artifacts/APK-VERIFICATION.txt || { echo "::error::apksigner verify failed"; exit 1; }
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging artifacts/$APK_NAME.apk > artifacts/APK-METADATA.txt 2>/tmp/aapt.txt || { echo "::error::aapt2 dump badging failed: $(head -3 /tmp/aapt.txt | tr '\n' ' ')"; exit 1; }
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 artifacts/$APK_NAME.apk > /tmp/zipalign.txt 2>&1 || { echo "::error::zipalign 16 KB page-alignment check failed: $(grep -iv 'OK' /tmp/zipalign.txt | head -5 | tr '\n' ' ')"; exit 1; }
           python - <<'PY'
-          import pathlib,hashlib,json,os,zipfile
+          import pathlib,hashlib,json,os,zipfile,sys
+          def fail(msg):
+              print('::error::'+msg);sys.exit(1)
           v,code,name=os.environ['APP_VERSION'],os.environ['VERSION_CODE'],os.environ['APK_NAME']
           p=pathlib.Path(f'artifacts/{name}.apk')
-          assert p.stat().st_size<100*1024*1024,'APK exceeds GitHub per-file download limit'
+          if p.stat().st_size>=100*1024*1024:fail('APK exceeds GitHub per-file download limit')
           metadata=pathlib.Path('artifacts/APK-METADATA.txt').read_text()
           for s in ["name='com.molious.molebeyondtest'",f"versionName='{v}'",f"versionCode='{code}'","native-code: 'arm64-v8a'"]:
-              assert s in metadata,s
+              if s not in metadata:fail('APK metadata missing '+s)
           source=pathlib.Path('src/hybridHtml.ts').read_text()
           html=json.loads(source.removeprefix('export default ').strip().removesuffix(';'))
           with zipfile.ZipFile(p) as z:
-              assert z.testzip() is None
+              if z.testzip() is not None:fail('APK zip is corrupt')
               bundle=z.read('assets/index.android.bundle')
-              assert html.encode() in bundle or html.encode('utf-16-le') in bundle,'Latest game document missing from compiled APK'
+              if not(html.encode() in bundle or html.encode('utf-16-le') in bundle):fail('Latest game document missing from compiled APK')
           digest=hashlib.sha256(p.read_bytes()).hexdigest()
           pathlib.Path(f'artifacts/{name}.apk.sha256').write_text(digest+'  '+p.name+'\n')
           pathlib.Path(f'artifacts/build-{v}-status.json').write_text(json.dumps({'state':'success','version':v,'version_code':int(code),'release':os.environ['IS_RELEASE']=='true','apk':p.name,'sha256':digest,'bytes':p.stat().st_size,'source_commit':os.environ['GITHUB_SHA'],'signing':'template debug/test key','physical_device_tested':False,'run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},indent=2)+'\n')
