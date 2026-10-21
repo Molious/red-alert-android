@@ -1,7 +1,8 @@
 // Injected into the Red Alert page. It defines `window.RedAlertNative` (version 1), the API the web app
 // already looks for in src/lib/native/useNativeBridge.js:
 //
-//   listenOnce(done(text|null, error|null)) -> id     one spoken command, then the mic closes
+//   listenOnce(done(text|null, error|null), {open}?) -> id   one spoken command, then the mic closes;
+//                                                     open:true = the always-on mic between questions (#25)
 //   cancelListen(id)
 //   speak(text, {pitch, rate}?), hush()                SEXTANT's voice through Android text-to-speech
 //   speakRequest(text, done(outcome), {pitch, rate}?) -> id, cancelSpeech(id)
@@ -18,7 +19,7 @@ export const nativeBridgeScript = `
   if (window.RedAlertNative) { window.RedAlertNative.announce(); return; }
   var channel = 'red-alert-native-v1';
   var doc = String(Date.now()) + '-' + Math.random().toString(36).slice(2);
-  var serial = 0, listens = {}, searches = {}, speeches = {}, currentSpeech = 0, journeyActive = false, audioMuted = false, preparations = {}, crewAsks = {}, watches = {}, events = { speak: [], hush: [] };
+  var serial = 0, cinematics = {}, listens = {}, searches = {}, speeches = {}, currentSpeech = 0, journeyActive = false, audioMuted = false, preparations = {}, crewAsks = {}, watches = {}, events = { speak: [], hush: [] };
   function post(type, id, extra) {
     window.ReactNativeWebView.postMessage(JSON.stringify(Object.assign({ channel: channel, doc: doc, type: type, id: id }, extra || {})));
   }
@@ -40,8 +41,12 @@ export const nativeBridgeScript = `
     prepareSession: function(done){var id=++serial;preparations[id]=done;post('session.prepare',id);return id;},
     cancelPreparation: function(id){delete preparations[id];post('session.cancel',id);},
     setAudioMuted: function(value){value=!!value;if(audioMuted===value)return;audioMuted=value;post('audio.state',0,{muted:value});},
+    // Opening cinematic (#19): the app plays the native video over the page. done(outcome) runs once when it
+    // ends by itself ('finished', 'skipped' by a tap, or 'error'); stopCinematic(id) stops it and done is NOT called.
+    playCinematic: function (done) { var id = ++serial; cinematics[id] = done; post('cinematic.play', id); return id; },
+    stopCinematic: function (id) { delete cinematics[id]; post('cinematic.stop', id); },
     announce: function () { post('bridge.ready', 0); window.dispatchEvent(new CustomEvent('red-alert-native-ready')); },
-    listenOnce: function (done) { var id = ++serial; listens[id] = done; post('voice.listen', id); return id; },
+    listenOnce: function (done, opts) { var id = ++serial; listens[id] = done; post('voice.listen', id, opts && opts.open === true ? { open: true } : {}); return id; },
     cancelListen: function (id) { delete listens[id]; post('voice.cancel', id); },
     speak: function (text, opts) { emit('speak'); currentSpeech = ++serial; post('speech.say', currentSpeech, voice(text, opts)); },
     speakRequest: function (text, done, opts) { var id=++serial; speeches[id]=done; currentSpeech=id; emit('speak'); post('speech.say',id,voice(text,opts)); return id; },
@@ -63,6 +68,8 @@ export const nativeBridgeScript = `
       } else if (m.type === 'voice.result') {
         var done = listens[m.id];
         if (done) { delete listens[m.id]; done(m.text || null, m.error || null); }
+      } else if (m.type === 'cinematic.end') {
+        var shown = cinematics[m.id]; delete cinematics[m.id]; if (shown) shown(m.outcome === 'error' || m.outcome === 'skipped' ? m.outcome : 'finished');
       } else if (m.type === 'speech.end') {
         var spoken=speeches[m.id];delete speeches[m.id];if(spoken)spoken(m.outcome || 'played');
         if(currentSpeech===m.id){currentSpeech=0;emit('hush');}

@@ -28,7 +28,7 @@ export function installCockpit({engine,controller,audio,crewVoices,aiCrew}){
   status.textContent=s.status;planner.hidden=!s.planning;viewport.classList.toggle('planning-destination',s.planning);get('form button').disabled=s.busy;
   get('[data-action="confirm"]').disabled=!s.selected||s.busy;get('[data-selected]').textContent=s.selected?'Selected: '+s.selected.label:'';
   const resultKey=JSON.stringify(s.results);if(resultKey!==shownResults){shownResults=resultKey;results.replaceChildren();s.results.forEach((p,index)=>{const b=document.createElement('button');b.type='button';b.textContent=(index+1)+'. '+p.label;b.onclick=()=>void act({type:'select',index});results.append(b);});if(s.results.length)requestAnimationFrame(()=>results.scrollIntoView({block:'nearest'}));}
-  get('[data-action="launch"]').disabled=s.journey?.phase!=='route_ready'||!s.parked||s.busy;
+  get('[data-action="launch"]').disabled=s.journey?.phase!=='route_ready'||s.busy||Number.isFinite(s.fix?.speed)&&s.fix.speed>2; // #30: parked not required; voice works while moving
   get('[data-action="repeat"]').disabled=!s.journey;get('[data-action="cancel"]').disabled=!s.journey||['arrived','cancelled'].includes(s.journey.phase);
   get('[data-action="home"]').disabled=!!s.journey&&!['arrived','cancelled'].includes(s.journey.phase);
   get('[data-action="retry"]').hidden=!s.journey||s.journey.phase!=='signal_lost';get('[data-action="resume"]').hidden=!s.resumeNeeded&&!!s.fix;get('[data-action="resume"]').textContent=s.resumeNeeded?'Resume navigation':'Start GPS';

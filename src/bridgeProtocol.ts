@@ -21,6 +21,7 @@ export type Message = {
   voice?: string;
   key?: string;
   system?: string;
+  open?: boolean;
 };
 
 const TYPES = new Set([
@@ -37,6 +38,8 @@ const TYPES = new Set([
   'session.cancel',
   'audio.state',
   'ai.ask',
+  'cinematic.play',
+  'cinematic.stop',
 ]);
 
 export function parseBridgeMessage(raw: string, url: string): Message | null {
@@ -64,6 +67,8 @@ export function parseBridgeMessage(raw: string, url: string): Message | null {
     if(m.type === 'geo.search' && (typeof m.text !== 'string' || m.text.trim().length < 3 || m.text.length > 200))return null;
     if(m.type==='journey.active'&&typeof m.active!=='boolean')return null;
     if(m.type==='audio.state'&&typeof m.muted!=='boolean')return null;
+    // Open-mic listening (#25): a plain yes/no flag.
+    if(m.type==='voice.listen'&&m.open!==undefined&&typeof m.open!=='boolean')return null;
     return m as Message;
   } catch {
     return null;

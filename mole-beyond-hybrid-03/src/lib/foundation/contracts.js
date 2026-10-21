@@ -65,6 +65,12 @@ export function contractOffer(state){
  const c=contractState(state);if(c.active)return null;
  return c.chapter<STORY_ARC.length&&!c.skipArc?STORY_ARC[c.chapter]:boardContract(c.jobs);
 }
+// An offer Max took on her own because the Captain didn't answer (#4) can be handed back by voice until
+// its first story beat plays. It counts as declined.
+export function releaseContract(state,id){
+ const c=contractState(state);if(!c.active||c.active.id!==id)throw Error('That contract is not in the hold');if(c.active.beats.length)throw Error('Too late to hand that one back, Captain');
+ state.contracts={...c,completed:[...c.completed],active:null,skipArc:id.startsWith('arc-')?true:c.skipArc===true,jobs:id.startsWith('job-')?c.jobs+1:c.jobs};
+}
 export function contractById(id){return STORY_ARC.find(c=>c.id===id)||(/^job-\d+$/.test(id)?boardContract(Number(id.slice(4))):null);}
 
 export function validateContracts(state){
