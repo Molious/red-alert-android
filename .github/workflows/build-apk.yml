@@ -104,9 +104,9 @@ jobs:
       - name: Verify APK and prepare download
         run: |
           mkdir -p artifacts
-          cp android/app/build/outputs/apk/release/app-release.apk artifacts/$APK_NAME.apk
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/$APK_NAME.apk || { echo "::error::release APK not found: $(ls android/app/build/outputs/apk/release/ 2>&1 | tr '\n' ' ')"; exit 1; }
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs artifacts/$APK_NAME.apk > artifacts/APK-VERIFICATION.txt || { echo "::error::apksigner verify failed"; exit 1; }
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/$APK_NAME.apk > artifacts/APK-METADATA.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging artifacts/$APK_NAME.apk > artifacts/APK-METADATA.txt 2>/tmp/aapt.txt || { echo "::error::aapt2 dump badging failed: $(head -3 /tmp/aapt.txt | tr '\n' ' ')"; exit 1; }
           "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 artifacts/$APK_NAME.apk > /tmp/zipalign.txt 2>&1 || { echo "::error::zipalign 16 KB page-alignment check failed: $(grep -iv 'OK' /tmp/zipalign.txt | head -5 | tr '\n' ' ')"; exit 1; }
           python - <<'PY'
           import pathlib,hashlib,json,os,zipfile,sys
