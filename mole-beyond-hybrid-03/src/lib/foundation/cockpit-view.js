@@ -40,7 +40,7 @@ export function installCockpit({engine,controller,audio,crewVoices,aiCrew}){
   get('[data-action="station"]').setAttribute('aria-pressed',String(station.isOpen()));station.render();
   get('[data-limit]').textContent=Number.isFinite(s.speedLimit)?s.speedLimit:'—';get('[data-safety]').textContent=Number.isFinite(s.safety)?s.safety:'—';
   // Issue #6: show Crew on the stopped compact bridge, but preserve its moving-journey restriction.
-  get('[data-action="crew"]').hidden=!!s.journey&&['navigating','launching','recalculating'].includes(s.journey.phase)&&viewport.dataset.stopped!=='true';
+  get('[data-action="crew"]').hidden=!!s.journey&&['navigating','launching','recalculating','signal_lost'].includes(s.journey.phase)&&viewport.dataset.stopped!=='true'; // #11: signal lost mid-drive is still driving
   const done=(s.journey?.completedEventIds||[]).find(id=>id.endsWith(':salvage'));if(done&&!salvageShown.has(done)){salvageShown.add(done);if(s.journey.phase==='navigating')playSalvage();}
   combat.update(s);
   roadMap?.update(s);
