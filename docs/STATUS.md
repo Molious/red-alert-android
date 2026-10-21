@@ -4,11 +4,9 @@ Shared status for Cory, Claude and Chet. Keep it short: one line per item, detai
 Whoever finishes a task updates this file in the same PR.
 
 ## Builds
-- **Current build:** 1.0.29 (versionCode 30) · branch `build/mole-beyond-1.0.29` · **draft** release `v1.0.29` (preview: no cinematic yet). It's rebuilt when more work merges; Cory publishes the final one.
-- **In 1.0.29 so far:** #4 crew act anyway (PR #16) · #17 flaky test (PR #18) · #21 prologue/depart lines at launch (PR #23) · #20 + #7 voice commands (PR #24) · #25 always-on mic (PR #26)
-- **Still to come:** #19 opening cinematic (Chet) · #6 bridge keys (PR #10, Chet) · #11 (Linux Claude, after #10) · #15 map pin (Chet, may slip)
-- **New PRs target `build/mole-beyond-1.0.29`.**
-- **Published:** v1.0.28 (versionCode 29) · `main` matches it
+- **Current work:** 1.0.30 (versionCode 31) · branch `build/mole-beyond-1.0.30` · **all new PRs target it**. Pushes rebuild the draft release `v1.0.30`; Cory publishes.
+- **Published:** v1.0.29 (versionCode 30), APK built from `19ba524`; `main` matches it. (The v1.0.29 tag points at 3b736e5, the draft's original target; the workflow now updates the target on rebuilds.)
+- **1.0.30 plan:** #10 bridge keys · #40 speedo top-left · #34 captain in the nav cockpit · #15 map pin (Chet) · #11 stopped timer (Linux Claude, after #10) · #33 ElevenLabs voices + #32 AI crew by name (Chet, voice lead) · #35 mic vs voice call
 - **Device under test:** Samsung S23 Ultra
 
 ## In review (for 1.0.29)
@@ -51,5 +49,4 @@ Whoever finishes a task updates this file in the same PR.
 - `main` always matches the latest release Cory has published (Claudette updates it after each publish). Work happens on `build/mole-beyond-1.0.N`.
 - `src/hybridHtml.ts` is generated: after merging any game-source change, re-run `npm run bundle:hybrid` rather than hand-merging it.
 
-_Updated by Linux Claude, 2026-10-21 (#31)_
-_Updated by Linux Claude, 2026-10-21 (#30)_
+_Updated by Claudette, 2026-10-21 (1.0.29 published, 1.0.30 opened)_

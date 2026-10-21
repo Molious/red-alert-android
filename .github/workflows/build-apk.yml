@@ -153,7 +153,8 @@ jobs:
               echo "::error::$tag is already published by Cory. Bump the version in app.json and build a new branch."; exit 1
             fi
             gh release upload "$tag" $files --clobber
-            gh release edit "$tag" --notes "$notes (rebuilt)"
+            # Keep the draft pointing at this build, so publishing tags the code the APK came from.
+            gh release edit "$tag" --notes "$notes (rebuilt)" --target "$GITHUB_SHA"
           else
             gh release create "$tag" $files --target "$GITHUB_SHA" --title "Mole Beyond $APP_VERSION" --notes "$notes" --draft --prerelease
           fi

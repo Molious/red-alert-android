@@ -2,13 +2,13 @@
   "expo": {
     "name": "Mole Beyond Test",
     "slug": "mole-beyond-hybrid-test",
-    "version": "1.0.29",
+    "version": "1.0.30",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "backgroundColor": "#05070b",
     "android": {
       "package": "com.molious.molebeyondtest",
-      "versionCode": 30,
+      "versionCode": 31,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.WAKE_LOCK"
