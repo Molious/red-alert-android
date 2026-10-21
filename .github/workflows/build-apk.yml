@@ -94,6 +94,8 @@ jobs:
       - name: Run regression and asset checks
         run: |
           npm run typecheck
+          # Regenerate offline bundle on Linux runner before verification.
+          npm run bundle:hybrid
           npm test
       - name: Generate Android project from the preserved latest game
         run: npx --no-install expo prebuild --platform android --no-install
