@@ -12,12 +12,12 @@ type Profile = {gender: Gender; accents: string[]; pitch: number; rate: number};
 
 // Order matters: earlier characters get first pick of the best voices.
 export const CREW_PROFILES: Record<string, Profile> = {
-  WRAITH: {gender: 'male', accents: ['en-au', 'en-gb', 'en-us'], pitch: 0.9, rate: 0.95}, // navigator: low, clear, unhurried
+  ZYREN: {gender: 'male', accents: ['en-au', 'en-gb', 'en-us'], pitch: 0.9, rate: 0.95}, // navigator: low, clear, unhurried
   VEX: {gender: 'male', accents: ['en-us', 'en-au', 'en-gb'], pitch: 0.75, rate: 1.06},
-  SILAS: {gender: 'male', accents: ['en-gb', 'en-in', 'en-us'], pitch: 0.85, rate: 0.92},
+  SILA: {gender: 'female', accents: ['en-gb', 'en-in', 'en-us'], pitch: 1.12, rate: 0.92},
   BASTION: {gender: 'male', accents: ['en-au', 'en-gb', 'en-us'], pitch: 0.65, rate: 0.88},
   MAX: {gender: 'female', accents: ['en-in', 'en-us', 'en-au'], pitch: 1.1, rate: 1.06},
-  CHET: {gender: 'female', accents: ['en-us', 'en-in', 'en-gb'], pitch: 1.1, rate: 1.0}, // ship AI
+  ATLAS: {gender: 'male', accents: ['en-us', 'en-in', 'en-gb'], pitch: 0.82, rate: 1.0}, // ship AI
 };
 const DEFAULT: Profile = {gender: 'female', accents: ['en-au'], pitch: 0.9, rate: 0.98};
 
@@ -80,8 +80,8 @@ export function crewVoiceList(voices: readonly DeviceVoice[] | null | undefined)
 // `chosen` is the driver's pick from the crew voice check; it wins when the phone still has that voice.
 export function crewVoiceFor(map: Record<string, CrewVoice> | null, character: unknown, chosen?: unknown, options?: readonly VoiceOption[]): CrewVoice {
   const raw = typeof character === 'string' ? character.toUpperCase() : '';
-  const key = raw === 'MAGS' ? 'MAX' : raw; // Mags was Max's old name in early builds
-  const base = (map && map[key]) || (map && map.WRAITH) || {language: 'en-AU', pitch: DEFAULT.pitch, rate: DEFAULT.rate};
+  // Keep legacy save files and existing callers compatible during crew renaming.\n  const aliases: Record<string, string> = {MAGS: 'MAX', WRAITH: 'ZYREN', SILAS: 'SILA', CHET: 'ATLAS'};\n  const key = aliases[raw] || raw;
+  const base = (map && map[key]) || (map && map.ZYREN) || (map && map.WRAITH) || {language: 'en-AU', pitch: DEFAULT.pitch, rate: DEFAULT.rate};
   const p = CREW_PROFILES[key];
   const pick = typeof chosen === 'string' && options ? options.find(o => o.id === chosen) : undefined;
   return pick ? {voice: pick.id, language: pick.lang || base.language, pitch: p?.pitch ?? base.pitch, rate: p?.rate ?? base.rate} : base;
