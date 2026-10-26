@@ -1,15 +1,16 @@
-// ElevenLabs voice for each crew member (#33), chosen by Cory from the ElevenLabs Voice Library.
-// Voice IDs are not secret. An empty entry means that character keeps the phone's own voice.
+// Approved crew-to-ElevenLabs voice mapping (issue #42). Voice IDs are public identifiers, not API keys.
+// Legacy aliases preserve old save files and older dialogue routing during migration.
 export const CREW_VOICE_IDS: Record<string, string> = {
-  WRAITH: '', // navigator, male: low, sly, loyal; speaks every direction
-  VEX: '', // weapons, male: loud, reckless, grinning
-  SILAS: '', // scanners, male: cold, clipped, precise
-  BASTION: '', // engineer, male: gruff, calm, weary
-  MAX: '', // salvage and trade, female: wily, quick, cheeky
-  CHET: '', // the ship's AI, female: warm, dry humour
+  VEX: 'ysswSXp8U9dFpzPJqFje',
+  ZYREN: 'CwhRBWXzGAHq8TQ4Fs17',
+  SILA: 'hpp4J3VqNfWAUOO0d1Us',
+  BASTION: 'nPczCjzI2devNBz1zQrb',
+  MAX: 'QzgYVYSNBgksoEWDkpKt',
+  ATLAS: 'dyLJ4nCukg4AOgAVlUR7',
 };
+const LEGACY_NAMES: Record<string, string> = { WRAITH: 'ZYREN', SILAS: 'SILA', CHET: 'ATLAS', MAGS: 'MAX' };
 export function elevenVoiceFor(character: string | undefined): string | null {
-  const key = String(character || '').toUpperCase();
-  const id = CREW_VOICE_IDS[key === 'MAGS' ? 'MAX' : key] || '';
+  const raw = String(character || '').trim().toUpperCase();
+  const id = CREW_VOICE_IDS[LEGACY_NAMES[raw] || raw] || '';
   return /^[A-Za-z0-9]{20}$/.test(id) ? id : null;
 }
