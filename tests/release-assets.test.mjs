@@ -30,5 +30,5 @@ test('release metadata and visible native version consistently identify 1.0.31',
  const app=read('app.json').expo,packageJson=read('package.json'),lock=read('package-lock.json');
  assert.equal(app.version,'1.0.31');assert.equal(app.android.versionCode,32);assert.equal(app.android.package,'com.molious.molebeyondtest');
  assert.equal(packageJson.version,app.version);assert.equal(lock.version,app.version);assert.equal(lock.packages[''].version,app.version);
- assert.match(readFileSync(new URL('../App.tsx',import.meta.url),'utf8'),/LIVE COCKPIT · 1\.0\.30/);
+ assert.match(readFileSync(new URL('../App.tsx',import.meta.url),'utf8'),/LIVE COCKPIT · 1\.0\.31/);
 });
