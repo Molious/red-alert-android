@@ -52,7 +52,7 @@ test('stopping a line stops playback and reports onStopped once; a stopped line 
 test('keys and voice IDs are validated; cache names are stable and distinct',()=>{
  assert.ok(validElevenKey(KEY));assert.ok(validElevenKey('0123456789abcdef0123456789abcdef'));assert.ok(!validElevenKey('sk-ant-123'));assert.ok(!validElevenKey(''));
  assert.equal(cacheName(VOICE,'m','a'),cacheName(VOICE,'m','a'));assert.notEqual(cacheName(VOICE,'m','a'),cacheName(VOICE,'m','b'));
- assert.equal(elevenVoiceFor('NOBODY'),null);assert.deepEqual(Object.keys(CREW_VOICE_IDS).sort(),['BASTION','CHET','MAX','SILAS','VEX','WRAITH']);
+ assert.equal(elevenVoiceFor('NOBODY'),null);assert.deepEqual(Object.keys(CREW_VOICE_IDS).sort(),['ATLAS','BASTION','MAX','SILA','VEX','ZYREN']);
 });
 import {parseBridgeMessage,APP_ORIGIN,CHANNEL} from '../src/bridgeProtocol.ts';
 import {createVoiceKey,VOICE_KEY} from '../mole-beyond-hybrid-03/src/lib/foundation/voice-key.js';
