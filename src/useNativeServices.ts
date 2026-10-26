@@ -283,7 +283,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   const askCrew=async(r:Message)=>{
     try{
       const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':String(r.key),'anthropic-version':'2023-06-01'},
-        body:JSON.stringify({model:'claude-haiku-5-5',max_tokens:300,system:r.system,messages:[{role:'user',content:r.text}]})});
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:300,system:r.system,messages:[{role:'user',content:r.text}]})});
       const data=await res.json().catch(()=>null);
       if(!res.ok){send(r,'ai.reply',{error:res.status===401?'The API key was rejected. Check it in the Crew panel.':res.status===429?'Too many requests. Give it a minute.':'AI service error '+res.status+'.'});return;}
       const answer=Array.isArray(data?.content)?data.content.filter((c:{type?:string})=>c?.type==='text').map((c:{text?:string})=>c.text||'').join('\n'):'';
