@@ -80,7 +80,9 @@ export function crewVoiceList(voices: readonly DeviceVoice[] | null | undefined)
 // `chosen` is the driver's pick from the crew voice check; it wins when the phone still has that voice.
 export function crewVoiceFor(map: Record<string, CrewVoice> | null, character: unknown, chosen?: unknown, options?: readonly VoiceOption[]): CrewVoice {
   const raw = typeof character === 'string' ? character.toUpperCase() : '';
-  // Keep legacy save files and existing callers compatible during crew renaming.\n  const aliases: Record<string, string> = {MAGS: 'MAX', WRAITH: 'ZYREN', SILAS: 'SILA', CHET: 'ATLAS'};\n  const key = aliases[raw] || raw;
+  // Keep legacy save files and existing callers compatible during crew renaming.
+  const aliases: Record<string, string> = {MAGS: 'MAX', WRAITH: 'ZYREN', SILAS: 'SILA', CHET: 'ATLAS'};
+  const key = aliases[raw] || raw;
   const base = (map && map[key]) || (map && map.ZYREN) || (map && map.WRAITH) || {language: 'en-AU', pitch: DEFAULT.pitch, rate: DEFAULT.rate};
   const p = CREW_PROFILES[key];
   const pick = typeof chosen === 'string' && options ? options.find(o => o.id === chosen) : undefined;
