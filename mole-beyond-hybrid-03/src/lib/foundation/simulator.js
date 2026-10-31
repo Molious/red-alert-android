@@ -79,7 +79,7 @@ try{
   state:()=>{const snap=engine.snapshot();return {journey:lastState?.journey??snap.journey,muted:!!lastState?.muted,results:!!lastState?.results?.length,offer:!snap.contracts?.active&&!!contractOffer(snap)};},
   say:line=>audio.enqueue({id:'reply:'+Date.now()+':'+Math.random().toString(36).slice(2,6),expiresAt:Date.now()+15000,...line}),spoken:()=>audio.spoken(),chime,
   before:a=>{if(a.type==='recenter')view?.recenter();if(a.type==='resume'||a.type==='retry')gpsBlocked=false;},
-  askAi:t=>{if(!aiCrew.enabled())return false;void aiCrew.ask(t);return true;},
+  askAi:t=>{if(!aiCrew.accepts(t))return false;void aiCrew.ask(t);return true;},
   openPanel:t=>{const b=t==='home'?document.querySelector('.home-menu'):document.querySelector(`.cockpit-dashboard [data-action="${t}"]`);if(!b||b.hidden||b.disabled)return false;b.click();return true;},
   micOff:()=>{openMic=false;stopMic();}});
  voiceKey=createVoiceKey({storage:globalThis.localStorage,native});voiceKey.sync();window.addEventListener('red-alert-native-ready',()=>voiceKey.sync());view=installCockpit({engine,controller,audio,crewVoices,aiCrew,voiceKey});installSeatedCrew();
