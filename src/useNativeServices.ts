@@ -11,6 +11,9 @@ import type { WebViewMessageEvent } from 'react-native-webview';
 import { APP_ORIGIN, CHANNEL, parseBridgeMessage, type Message } from './bridgeProtocol';
 import {createRecognitionGate} from './recognitionGate';
 import {createSessionPreparation} from './sessionPreparation';
+import {createCloudVoice} from './cloudVoice';
+import {elevenSynth,voiceCache,playFile} from './elevenLabs';
+import {elevenVoiceFor} from './crewVoiceIds';
 import {createSpeechSession,waitForCaptureSpeech,createAudioSwitch} from './speechSession';
 import { pickLanguage, pickRecognitionService, MAX_LISTEN_MS, planRecognition, VOICE_BIAS, type RecognitionPlan } from './voicePolicy';
 import { isApproximatePin } from './addressPolicy';
@@ -249,19 +252,24 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
   const crewVoices=useRef<Record<string,CrewVoice>|null>(null);const voiceOptions=useRef<VoiceOption[]>([]);
   const loadCrewVoices=async()=>{try{const v=await Speech.getAvailableVoicesAsync();crewVoices.current=assignCrewVoices(v as DeviceVoice[]);voiceOptions.current=crewVoiceList(v as DeviceVoice[]);return v;}catch{return [];}};
   // Request-correlated speech: an old Android completion cannot finish a newer line.
+  // #33: ElevenLabs crew voices with the driver's key; the phone voice below is the fallback for every line.
+  const elevenKey=useRef('');
+  const cloud=useRef<ReturnType<typeof createCloudVoice>|null>(null);
+  if(!cloud.current)cloud.current=createCloudVoice({key:()=>elevenKey.current,voiceFor:elevenVoiceFor,synth:elevenSynth,cache:voiceCache,play:playFile});
   const speechSession = useRef<ReturnType<typeof createSpeechSession> | null>(null);
   if(!speechSession.current)speechSession.current=createSpeechSession({
-    speak:(text,callbacks,voice)=>{const cv=crewVoiceFor(crewVoices.current,voice.character,voice.voice,voiceOptions.current);const base={language:cv.language,rate:voice.rate??cv.rate,pitch:voice.pitch??cv.pitch};
-      // A chosen voice can fail (e.g. not downloaded); fall back to the default voice rather than going silent.
-      if(!cv.voice){Speech.speak(text,{...base,...callbacks});return;}
-      Speech.speak(text,{...base,voice:cv.voice,onStart:callbacks.onStart,onDone:callbacks.onDone,onStopped:callbacks.onStopped,onError:()=>Speech.speak(text,{...base,...callbacks})});},
-    stop:()=>Speech.stop(),send:(r,outcome)=>send(r,'speech.end',{outcome}),
+    speak:(text,callbacks,voice)=>{cloud.current!.speak(text,voice,callbacks,()=>phoneSpeak(text,callbacks,voice));},
+    stop:()=>{cloud.current?.stop();return Speech.stop();},send:(r,outcome)=>send(r,'speech.end',{outcome}),
     // A line that never starts means the phone's speech engine connection is gone (usually after the screen
     // was off): rebuild it and retry once, and tell the game so the driver can see it happened.
-    isSpeaking:()=>Speech.isSpeakingAsync(),
+    isSpeaking:async()=>!!cloud.current?.isPlaying()||await Speech.isSpeakingAsync(),
     recover:()=>typeof ExpoSpeechNative?.resetEngine==='function'?ExpoSpeechNative.resetEngine():undefined,
     onRecover:r=>{console.info('SPEECH','engine restart',r.id);if(alive.current&&document.current===r.doc)web.current?.injectJavaScript("window.dispatchEvent(new CustomEvent('hybrid-voice',{detail:{state:'restarted'}})); true;");}
   });
+  function phoneSpeak(text:string,callbacks:{onStart:()=>void;onDone:()=>void;onStopped:()=>void;onError:()=>void},voice:{pitch?:number;rate?:number;character?:string;voice?:string}){const cv=crewVoiceFor(crewVoices.current,voice.character,voice.voice,voiceOptions.current);const base={language:cv.language,rate:voice.rate??cv.rate,pitch:voice.pitch??cv.pitch};
+      // A chosen voice can fail (e.g. not downloaded); fall back to the default voice rather than going silent.
+      if(!cv.voice){Speech.speak(text,{...base,...callbacks});return;}
+      Speech.speak(text,{...base,voice:cv.voice,onStart:callbacks.onStart,onDone:callbacks.onDone,onStopped:callbacks.onStopped,onError:()=>Speech.speak(text,{...base,...callbacks})});}
   const stopSpeech = (id=0) => { speechSession.current?.cancel(id); };
   const speak = (r:Message) => {cancelVoice();if(!active.current||audioSwitch.current?.isMuted()){send(r,'speech.end',{outcome:'cancelled'});return;}void speechSession.current?.say(r);};
 
@@ -360,6 +368,7 @@ export function useNativeServices(web: React.RefObject<WebView | null>) {
     if (m.type === 'voice.listen') void listen(m);
     if (m.type === 'voice.cancel' && capture.current?.request.id === m.id) cancelVoice();
     if (m.type === 'speech.say') speak(m);
+    if (m.type === 'voice.config') elevenKey.current = typeof m.key === 'string' ? m.key : '';
     // #30: the opening video belongs to app open only. Never show it during a drive, and drop it the moment
     // the captain boards or a journey goes live, so it can never cover or delay the cockpit or a launch.
     if (m.type === 'cinematic.play' && !journeyActive.current) showCinematic({ doc: m.doc, id: m.id });

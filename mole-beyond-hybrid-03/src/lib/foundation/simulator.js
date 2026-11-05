@@ -8,12 +8,13 @@ import {createJourneyController} from './journey-controller.js';
 import {installCockpit} from './cockpit-view.js';
 import {playLaunch} from './launch-scene.js';
 import {playOpening} from './opening-cinematic.js';
+import {createVoiceKey} from './voice-key.js';
 import {createVoiceControl,answerHint,createMicGuard} from './voice-control.js';
 import {contractOffer} from './contracts.js';
 import {createCrewVoices} from './crew-voices.js';
 import {createAiCrew} from './ai-crew.js';
 export const crewVoices=createCrewVoices({storage:globalThis.localStorage});
-let answerUntil=0,view,controller,aiCrew,watch=null,nativeWatch=false,watchEpoch=0,listening=null,listenEpoch=0,recognition=null,started=false,gpsBlocked=false,preparation=null,boardEpoch=0,handsFree=false,speechPlaying=0,micRetry=null,micPermitted=true,voice,lastState=null,windowChimed=false,windowLeft=0,windowTimer=null,openMic=false,micDelay=300,listenStarted=0;
+let voiceKey,answerUntil=0,view,controller,aiCrew,watch=null,nativeWatch=false,watchEpoch=0,listening=null,listenEpoch=0,recognition=null,started=false,gpsBlocked=false,preparation=null,boardEpoch=0,handsFree=false,speechPlaying=0,micRetry=null,micPermitted=true,voice,lastState=null,windowChimed=false,windowLeft=0,windowTimer=null,openMic=false,micDelay=300,listenStarted=0;
 // Open mic (#25): on for the whole drive without a tap; pauses while anyone speaks; strict matching outside questions.
 let cinematicPlaying=false;const micGuard=createMicGuard();
 // The mic indicator and status line change only when something real changes (#25 follow-up). The open mic
@@ -27,7 +28,7 @@ function play(item,signal){view?.caption(item);if(signal.aborted)return Promise.
   // #7: a direction spoken in the middle of an answer window pauses it rather than using it up.
   else if(windowLeft>0&&answerUntil){answerUntil=Date.now()+Math.max(windowLeft,4000);windowLeft=0;}scheduleMic();resolve();};
  const cancel=()=>{if(id!==undefined)native()?.cancelSpeech?.(id);if(utterance)window.speechSynthesis?.cancel();done();};signal.addEventListener('abort',cancel,{once:true});timer=setTimeout(cancel,20000);
- if(native()?.speakRequest)id=native().speakRequest(item.text,done,{character:item.character,voice:crewVoices.voiceFor(item.character)});
+ if(native()?.speakRequest)id=native().speakRequest(item.text,done,{character:item.character,voice:crewVoices.voiceFor(item.character),priority:item.priority});
  else if(window.speechSynthesis&&window.SpeechSynthesisUtterance){utterance=new SpeechSynthesisUtterance(item.text);utterance.lang='en-AU';utterance.rate=.98;utterance.pitch=item.character==='VEX'?.8:item.character==='WRAITH'?.95:1;utterance.onend=done;utterance.onerror=done;window.speechSynthesis.speak(utterance);}else done();
  });}
 const audio=createDialogueQueue({play});
@@ -81,7 +82,7 @@ try{
   askAi:t=>{if(!aiCrew.enabled())return false;void aiCrew.ask(t);return true;},
   openPanel:t=>{const b=t==='home'?document.querySelector('.home-menu'):document.querySelector(`.cockpit-dashboard [data-action="${t}"]`);if(!b||b.hidden||b.disabled)return false;b.click();return true;},
   micOff:()=>{openMic=false;stopMic();}});
- view=installCockpit({engine,controller,audio,crewVoices,aiCrew});installSeatedCrew();
+ voiceKey=createVoiceKey({storage:globalThis.localStorage,native});voiceKey.sync();window.addEventListener('red-alert-native-ready',()=>voiceKey.sync());view=installCockpit({engine,controller,audio,crewVoices,aiCrew,voiceKey});installSeatedCrew();
  // #30: boarding always ends the opening cinematic, so it can never sit over (or delay) the cockpit or a launch.
  let opening=null;
  installCrewScreens({engine,onEnter:()=>{opening?.stop();started=true;const epoch=++boardEpoch;preparation=-1;showStatus('Preparing GPS, microphone and speech…');const ready=result=>{if(epoch!==boardEpoch||!started)return;preparation=null;gpsBlocked=result.locationGranted===false;micPermitted=result.microphoneGranted!==false;openMic=micPermitted;handsFree=openMic;micGuard.reset();crewVoices.setOptions(result.voices,result.crew);controller.enter();showMic(handsFree,false);if(openMic)scheduleMic();if(!result.speechReady)showStatus('Speech service did not report a ready voice. Check device speech settings if silent.');view.ready.then(()=>window.dispatchEvent(new Event('resize')));};if(native()?.prepareSession){const request=native().prepareSession(ready);if(preparation!==null)preparation=request;}else{window.speechSynthesis?.getVoices();window.speechSynthesis?.resume();ready({speechReady:true,locationGranted:true,microphoneGranted:true});}},onLeave:()=>{const j=engine.snapshot().journey;if(j&&!['arrived','cancelled'].includes(j.phase)){void controller.command({type:'home'});return false;}started=false;boardEpoch++;if(preparation!==null)native()?.cancelPreparation?.(preparation);preparation=null;stopMic();controller.background();return true;},onDemo:()=>{}});
