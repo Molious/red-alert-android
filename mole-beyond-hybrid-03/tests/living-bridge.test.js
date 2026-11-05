@@ -22,8 +22,8 @@ test('the prologue introduces every crew member, and chatter never repeats until
  for(const c of CHATTER)for(const [who,text] of c.lines){assert.ok(['CHET','WRAITH','VEX','BASTION','MAX','SILAS'].includes(who),c.id);assert.ok(text.length<220,c.id);}
 });
 test('AI crew replies are parsed into crew lines and context is short',()=>{
- assert.deepEqual(parseCrewReply('[{"character":"vex","text":"Ha!"},{"character":"NOBODY","text":"Hi"}]'),[{character:'VEX',text:'Ha!'},{character:'CHET',text:'Hi'}]);
- assert.deepEqual(parseCrewReply('Just text'),[{character:'CHET',text:'Just text'}]);
+ assert.deepEqual(parseCrewReply('[{"character":"vex","text":"Ha!"},{"character":"NOBODY","text":"Hi"}]'),[{character:'VEX',text:'Ha!'}]);
+ assert.deepEqual(parseCrewReply('Just text'),[]);
  assert.ok(crewContext({credits:5,player:{name:'Cory'},journey:null}).length<300);
 });
 test('crew voice check cycles voices, gender first, and remembers the choice',()=>{

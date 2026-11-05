@@ -20,7 +20,7 @@ export function createCrewVoices({storage}={}){
   setOptions(list,crew){options=Array.isArray(list)?list.filter(o=>o&&typeof o.id==='string'):[];suggested=crew&&typeof crew==='object'?crew:{};},
   options:()=>options.slice(),
   // The id passed to the phone for this character (undefined = let the phone use its own pick).
-  voiceFor(character){const id=chosen[character];return id&&(!options.length||valid(id))?id:undefined;},
+  voiceFor(character){const legacy={ZYREN:'WRAITH',SILA:'SILAS',ATLAS:'CHET'}[character];const id=chosen[character]||chosen[legacy];return id&&(!options.length||valid(id))?id:undefined;},
   current(character){return this.voiceFor(character)||suggested[character]||'';},
   label(character){const o=options.find(x=>x.id===this.current(character));if(!o)return 'Phone default';return `${o.id}${o.gender?' · '+o.gender:' · gender unknown'}`;},
   // Step to the next voice, trying voices of the character's gender first.

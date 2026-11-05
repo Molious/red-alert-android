@@ -126,8 +126,8 @@ export function matchStrict(text,context={}){
  return {action:{type},via:'strict'};
 }
 
-const FILLER=/^(?:uh+|um+|er+m?|ah+|hmm+|oh|okay so|ok so|okay|ok|so|well|hey|right|alright then|please|captain|cap|computer|ship|chet|wraith|max|vex|silas|bastion|guys|team|crew,)\s+/;
-const TRAIL=/\s+(?:please|thanks|thank you|now|captain|cap|mate|for me|then|chet|wraith|max|vex|silas|bastion)$/;
+const FILLER=/^(?:uh+|um+|er+m?|ah+|hmm+|oh|okay so|ok so|okay|ok|so|well|hey|right|alright then|please|captain|cap|computer|ship|atlas|zyren|sila|mags|chet|wraith|max|vex|silas|bastion|guys|team|crew,)\s+/;
+const TRAIL=/\s+(?:please|thanks|thank you|now|captain|cap|mate|for me|then|atlas|zyren|sila|mags|chet|wraith|max|vex|silas|bastion)$/;
 
 export function normalizeSpeech(text){
  let s=String(text??'').toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();

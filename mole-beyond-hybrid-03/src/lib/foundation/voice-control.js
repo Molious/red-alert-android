@@ -81,9 +81,9 @@ export function createVoiceControl({command,snapshot,state,say,spoken,chime=()=>
     void reply('Voice recognition is not working right now, Captain.');return {reply:'error'};
    }
    const ctx=this.context();const m=strict?matchStrict(text,ctx):matchVoice(text,ctx);
+   if(!m&&!inWindow&&!ctx.expect.length&&!ctx.muted&&askAi(text))return {reply:'ai'};
    if(!m&&strict)return {ignored:true};
    if(!m){
-    if(!ctx.expect.length&&text.trim().split(/\s+/).length>=3&&askAi(text))return {reply:'ai'};
     const again='Say that again, Captain.'+(ctx.expect.length&&reprompts<1?' '+answerHint(ctx.expect):'');
     // Inside a question, ask once more and listen again; after that, let the crew handle it.
     if(ctx.expect.length&&reprompts<1){reprompts++;void reply(again,{ask:true,expect:ctx.expect});return {reply:'again',ask:ctx.expect};}
